@@ -1,0 +1,116 @@
+%-----------------Simulation parameters--------------
+sampleRate = 16;     % samples per second
+simDuration = 16;   % Duration of simulation in seconds
+samples = sampleRate*simDuration;   % total samples made
+interSamples = 16;  % No of datapoints per sample, or datapoints in between each sample
+totalSamples = sampleRate*simDuration*interSamples; % Total number of datapoints of input signal
+signalPeriods = 4;  % Number of input signal periods in simulation
+dutyCycle = 0.3;    % Duty cycle of square-wave signal
+signalAmplitude = 1;% Amplitude of input signal
+noisePower = 25;    % power of signal compared to noise
+
+%-----------------Perlin noise stuff-----------------
+M = 4294967296;     % Following tutorial, TODO understand wtf this is
+A = 1664525;
+C = 1;
+perlinSeed = rand;     % number between 0 and 1 i think
+Z = floor(perlinSeed*M);
+
+x = 0,
+y = h / 2,
+amp = 100;
+wl = 100,
+fq = 1 / wl,
+a = rand(),
+b = rand();
+
+%-----------------Sensor parameters------------------
+resolution = 8;     % bits of resolution
+maxMeasured = 10;   % sensor max value, gotta be greater than signal amplitude
+minMeasured = -10;  % same^
+levels = 2^resolution;  % Number of levels 
+LSBvalue = (maxMeasured - minMeasured)/levels;  % LSB value of sensor
+
+%-----------------Create input signals---------------
+time = (linspace(0, simDuration, totalSamples))';
+
+simpleSine = zeros(totalSamples, 1);    % SineWave
+simpleSquare = zeros(totalSamples, 1);  % Square wave 
+simplePerlin_1D = zeros(totalSamples, 1);   % Perlin
+
+% Square wave and sine generation
+i = 1;
+while(i <= totalSamples)
+    simpleSine(i) = signalAmplitude * sin((i/(totalSamples/signalPeriods))*2*pi);
+    if mod(i, (totalSamples/signalPeriods)) >= totalSamples*dutyCycle/signalPeriods
+        simpleSquare(i) = signalAmplitude;
+    else
+        simpleSquare(i) = 0;
+    end
+    i = i+1;
+end
+
+randnumber = randSeeded(M, A, C, Z)
+
+
+%-----------------Add white gaussian noise-----------
+noisySine = awgn(simpleSine, noisePower, "measured");
+noisySquare = awgn(simpleSquare, noisePower, "measured");
+
+%-----------------Add sensor error-------------------
+sensorSine = noisySine(1:interSamples:totalSamples);    % copy signals at sample rate
+sensorSquare = noisySquare(1:interSamples:totalSamples);
+
+sensorSine = round(sensorSine/LSBvalue)*LSBvalue;   % "round" to LSB value of sensor
+sensorSquare = round(sensorSquare/LSBvalue)*LSBvalue;
+%-----------------Output sensor values---------------
+% IDK if theres anything to add here
+
+%-----------------Algorithm time---------------------
+
+%-----------------plots------------------------------
+%{
+t = tiledlayout(3, 2);
+
+nexttile;
+plot(time, simpleSine);
+title("Input sinusoidal signal");
+
+nexttile;
+plot(time, simpleSquare);
+title("Input square signal");
+
+nexttile;
+plot(time, noisySine);
+title("Noisy sinusoidal signal");
+
+nexttile;
+plot(time, noisySquare);
+title("Noisy square signal");
+
+nexttile;
+plot(sensorSine);
+title("Discrete sensor reading for sinusoidal signal");
+
+nexttile;
+plot(sensorSquare);
+title("Discrete sensor reading for square signal");
+
+t.Padding = 'compact';
+t.TileSpacing = 'compact';
+%}
+
+%plot(simplePerlin_1D);
+
+
+
+%-------------------Functions------------
+function retrand = randSeeded(M, A, C, Z)
+    retrand = mod(A*Z+C, M)/M;
+end
+
+function retVal = interpolate(pa, pb, px)
+    ft = px*pi;
+    f = (1 - cos(ft))*0.5;
+    retVal = pa * (1 - f) + pb * f;
+end

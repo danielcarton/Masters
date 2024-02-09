@@ -1,0 +1,69 @@
+General operation:
+    Three sensor systems, each with three (maybe more) modes of operation. Each mode of operation has a specific power draw and throughput (consider a power-throughput unit for comparison). 
+    Chosen sensors should be reasonable and expected for an energy harvesting system, e.g. nothing wild or useless.
+    Algorithm should adjust appropriate throughput for the given input energy harvester power, and any other internal factors
+        Internal factors we should consider are priority (which sensor should be on if only one can be?), or sensor relationships (Unreasonable to keep sensor 2 low throughput if sensor 3 has moderate throughput, as an example).
+
+Sensor system power:
+    Add individual buck converter for each device for lowest-point of operation.
+
+Digital logic:
+    General I2C control logic, like I2C GPIO extender with load switches (AND PULL DOWNS!). 
+    Remember robust solution for switching off I2C lines.
+        This can be analog switches, where the devices are disconnected from power or I2C lines, or both.
+    Modes for nRF SoC based off measured input power:
+        High: Check input power frequently
+        Moderate: check input power often
+        Low: Check input power rarely
+        Very low: Disable all sensors, check input power VERY rarely
+
+Sensor system 1 - Analog sensor with adjustable *measured* throughput
+    Analog temperature sensor with required circuitry and ADC
+    ADC must be adjustable for throughput
+    Modes: (not including OFF)
+        High - 16(?)bit resolution, and 10Hz(?) rate
+        Moderate - 12(?)bit resolution, and 1Hz(?) rate
+        low - 8(?)bit resolution, and 0.1Hz(?) rate
+
+Sensor system 2 - Analog/digital sensor with *internally* adjusted throughput
+    MEMS sensor(?)
+        -Gyro
+        -Accelerometer
+        -Pressure
+    Internally adjustable throughput
+    Modes: (Not including OFF)
+        High - High throughput setting
+        Moderate - Moderate throughput setting
+        Low - Low throughput setting
+
+Sensor system 3 - Three sensors measuring same property, but at different throughputs. 
+    MEMS sensor(?)
+        -Gyro
+        -Accelerometer
+        -Pressure
+    Modes: (Not including None)
+        High - High accuracy and rate sensor
+        Moderate - Moderate accuracy and rate sensor
+        Low - Low accuracy and rate sensor
+
+Algorithm:
+    Runs on nRF SoC?
+    Based off the input power, the Algorithm should:
+        - choose which sensors to use to minimize power and maximize throughput
+        - regulate the frequency at which the input power is measured (consider the nRF a sensor?)
+        - Make mode decision.
+
+General work before answer or before next meeting:
+    Research power-saving, decision-making algorithms
+    Research Temperature sensors, temperature sensor circuits, & configurable I2C ADC
+    Research variable MEMS circuits
+    Research efficient low-power buck converters, making sure their efficiency provides a benefit
+    Research better(?) current measuring methods that can be used during testing
+        Make sure it doesnt have a massive impact on the circuit in area and power
+
+Questions:
+    Is checkpoint monitor system required?
+    Do you want this to run autonomously on the sensor module, e.g. no nRF input/control?
+    For per gunnar: We didnt start any wirk before the 22nd, can we adjust so that the 20 weeks start then?
+    Do you agree with our "sensor priority" idea, where one sensor should be considered even if its not the most efficient?
+    Do you agree with our current plan for the project? Is this a project you can see fulfil your scope?
