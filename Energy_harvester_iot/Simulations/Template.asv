@@ -1,28 +1,18 @@
 %-----------------Simulation parameters--------------
 sampleRate = 16;     % samples per second
+samplePeriod = 1/sampleRate;
 simDuration = 16;   % Duration of simulation in seconds
 samples = sampleRate*simDuration;   % total samples made
 interSamples = 16;  % No of datapoints per sample, or datapoints in between each sample
 totalSamples = sampleRate*simDuration*interSamples; % Total number of datapoints of input signal
-signalPeriods = 4;  % Number of input signal periods in simulation
-dutyCycle = 0.3;    % Duty cycle of square-wave signal
+signalFrequency = 0.5;    % Signal Frequency
+signalPeriod = 1/signalFrequency;  % Number of input signal periods in simulation
+dutyCycle = 0.5;    % Duty cycle of square-wave signal
 signalAmplitude = 1;% Amplitude of input signal
 noisePower = 25;    % power of signal compared to noise
 
 %-----------------Perlin noise stuff-----------------
-M = 4294967296;     % Following tutorial, TODO understand wtf this is
-A = 1664525;
-C = 1;
-perlinSeed = rand;     % number between 0 and 1 i think
-Z = floor(perlinSeed*M);
 
-x = 0,
-y = h / 2,
-amp = 100;
-wl = 100,
-fq = 1 / wl,
-a = rand(),
-b = rand();
 
 %-----------------Sensor parameters------------------
 resolution = 8;     % bits of resolution
@@ -38,19 +28,19 @@ simpleSine = zeros(totalSamples, 1);    % SineWave
 simpleSquare = zeros(totalSamples, 1);  % Square wave 
 simplePerlin_1D = zeros(totalSamples, 1);   % Perlin
 
+
 % Square wave and sine generation
 i = 1;
 while(i <= totalSamples)
-    simpleSine(i) = signalAmplitude * sin((i/(totalSamples/signalPeriods))*2*pi);
-    if mod(i, (totalSamples/signalPeriods)) >= totalSamples*dutyCycle/signalPeriods
-        simpleSquare(i) = signalAmplitude;
+    simpleSine(i) = signalAmplitude * sin(i / (totalSamples / simDuration) * 2 * pi * signalFrequency);
+
+    if mod(i, totalSamples/simDuration/signalFrequency) >= dutyCycle * totalSamples/simDuration&
+            simpleSquare(i) = signalAmplitude;
     else
-        simpleSquare(i) = 0;
-    end
+            simpleSquare(i) = 0;
+    end 
     i = i+1;
 end
-
-randnumber = randSeeded(M, A, C, Z)
 
 
 %-----------------Add white gaussian noise-----------
@@ -69,7 +59,7 @@ sensorSquare = round(sensorSquare/LSBvalue)*LSBvalue;
 %-----------------Algorithm time---------------------
 
 %-----------------plots------------------------------
-%{
+%{%}
 t = tiledlayout(3, 2);
 
 nexttile;
@@ -98,19 +88,9 @@ title("Discrete sensor reading for square signal");
 
 t.Padding = 'compact';
 t.TileSpacing = 'compact';
-%}
 
-%plot(simplePerlin_1D);
 
 
 
 %-------------------Functions------------
-function retrand = randSeeded(M, A, C, Z)
-    retrand = mod(A*Z+C, M)/M;
-end
 
-function retVal = interpolate(pa, pb, px)
-    ft = px*pi;
-    f = (1 - cos(ft))*0.5;
-    retVal = pa * (1 - f) + pb * f;
-end

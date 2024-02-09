@@ -1,11 +1,12 @@
 %-----------------Simulation parameters--------------
-sampleRate = 16;     % samples per second
-simDuration = 16;   % Duration of simulation in seconds
+sampleRate = 16;     % sensor samples per second
+samplePeriod = 1/sampleRate;
+simDuration = 4;   % Duration of simulation in seconds
 samples = sampleRate*simDuration;   % total samples made
-interSamples = 16;  % No of datapoints per sample, or datapoints in between each sample
+interSamples = 32;  % No of datapoints per sample, or datapoints in between each sample
 totalSamples = sampleRate*simDuration*interSamples; % Total number of datapoints of input signal
-signalPeriods = 4;  % Number of input signal periods in simulation
-dutyCycle = 0.3;    % Duty cycle of square-wave signal
+signalFrequency = 0.5;    % Signal Frequency
+dutyCycle = 0.5;    % Duty cycle of square-wave signal
 signalAmplitude = 1;% Amplitude of input signal
 noisePower = 25;    % power of signal compared to noise
 
@@ -26,15 +27,17 @@ simpleSine = zeros(totalSamples, 1);    % SineWave
 simpleSquare = zeros(totalSamples, 1);  % Square wave 
 simplePerlin_1D = zeros(totalSamples, 1);   % Perlin
 
+
 % Square wave and sine generation
 i = 1;
 while(i <= totalSamples)
-    simpleSine(i) = signalAmplitude * sin((i/(totalSamples/signalPeriods))*2*pi);
-    if mod(i, (totalSamples/signalPeriods)) >= totalSamples*dutyCycle/signalPeriods
-        simpleSquare(i) = signalAmplitude;
+    simpleSine(i) = signalAmplitude * sin(i / (totalSamples / simDuration) * 2 * pi * signalFrequency);
+
+    if mod(i, totalSamples/simDuration/signalFrequency) >= dutyCycle * totalSamples/simDuration/signalFrequency
+            simpleSquare(i) = signalAmplitude;
     else
-        simpleSquare(i) = 0;
-    end
+            simpleSquare(i) = 0;
+    end 
     i = i+1;
 end
 
@@ -55,7 +58,7 @@ sensorSquare = round(sensorSquare/LSBvalue)*LSBvalue;
 %-----------------Algorithm time---------------------
 
 %-----------------plots------------------------------
-%{
+%{%}
 t = tiledlayout(3, 2);
 
 nexttile;
@@ -84,23 +87,9 @@ title("Discrete sensor reading for square signal");
 
 t.Padding = 'compact';
 t.TileSpacing = 'compact';
-%}
 
-s = perlin2D(totalSamples)
-mesh(s);
 
 
 
 %-------------------Functions------------
-function s = perlin2D (m)
-  s = zeros([m,m]);     % Prepare output image (size: m x m)
-  w = m;
-  i = 0;
-  while w > 3
-    i = i + 1;
-    d = interp2(randn([m,m]), i-1, 'spline');
-    s = s + i * d(1:m, 1:m);
-    w = w - ceil(w/2 - 1);
-  end
-  s = (s - min(min(s(:,:)))) ./ (max(max(s(:,:))) - min(min(s(:,:))));
-end
+
