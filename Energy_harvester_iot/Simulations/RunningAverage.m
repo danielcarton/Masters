@@ -1,17 +1,17 @@
 %-----------------Simulation parameters--------------
-sampleRate = 16;     % sensor samples per second
+sampleRate = 64;     % sensor samples per second
 samplePeriod = 1/sampleRate;
-simDuration = 8;   % Duration of simulation in seconds
+simDuration = 8 ;   % Duration of simulation in seconds
 samples = sampleRate*simDuration;   % total samples made
 interSamples = 32;  % No of datapoints per sample, or datapoints in between each sample
 totalSamples = sampleRate*simDuration*interSamples; % Total number of datapoints of input signal
-signalFrequency = 0.5;    % Signal Frequency
+signalFrequency = 1;    % Signal Frequency
 dutyCycle = 0.5;    % Duty cycle of square-wave signal
 signalAmplitude = 1;% Amplitude of input signal
 noisePower = 25;    % power of signal compared to noise
 
 %-----------------value noise stuff------------------
-valueNoiseFrequency = 1; % random data points generated per second of simulation
+valueNoiseFrequency = 2; % random data points generated per second of simulation
 valueNoiseDatapoints = valueNoiseFrequency * simDuration;
 
 %-----------------Sensor parameters------------------
@@ -26,7 +26,7 @@ simpleSine = zeros(totalSamples, 1);    % SineWave
 simpleSquare = zeros(totalSamples, 1);  % Square wave 
 
 simpleValueNoise = zeros(totalSamples, 1);   % final value noise array
-valueNoiseRandPoints = rand(valueNoiseDatapoints + 1, 1);   % randomly generated value noise datapoints, requires additional point to complete the longer array
+valueNoiseRandPoints = (rand(valueNoiseDatapoints + 1, 1)-0.5).*2;   % randomly generated value noise datapoints, requires additional point to complete the longer array
 
 % Square wave and sine generation
 
@@ -36,7 +36,7 @@ for i = 1: totalSamples
     if mod(i, totalSamples/simDuration/signalFrequency) >= dutyCycle * totalSamples/simDuration/signalFrequency
             simpleSquare(i) = signalAmplitude;
     else
-            simpleSquare(i) = 0;
+            simpleSquare(i) = -1*signalAmplitude;
     end 
 end
 
@@ -75,48 +75,117 @@ sensorValueNoise = round(sensorValueNoise/LSBvalue)*LSBvalue;
 % IDK if theres anything to add here
 
 %-----------------Algorithm time---------------------
+order = 3;
+
+algOutSine = runningAverage(sensorSine, order);
+algOutSquare = runningAverage(sensorSquare, order);
+algOutValueNoisese = runningAverage(sensorValueNoise, order);
 
 %-----------------plots------------------------------
-%{%}
-t = tiledlayout(3, 3);
+yaxisPadding = 1.25;
+
+fullTimeSpace = linspace(0, simDuration, totalSamples);
+reducedTimeSpace = linspace(0, simDuration, totalSamples/interSamples);
+
+errorSine = abs(algOutSine - simpleSine(1:interSamples:totalSamples))/signalAmplitude*100;
+errorSquare = abs(algOutSquare - simpleSquare(1:interSamples:totalSamples))/signalAmplitude*100;
+errorValueNoise = abs(algOutValueNoisese - simpleValueNoise(1:interSamples:totalSamples))/signalAmplitude*100;
+
+meanErrorSine = mean(errorSine);
+meanErrorSquare = mean(errorSquare);
+meanErrorValueNoise = mean(errorValueNoise);
+
+t = tiledlayout(5, 3);
+
+% Ideal input signals
 
 nexttile;
-plot(simpleSine);
-title("Input sinusoidal signal");
+plot(fullTimeSpace, simpleSine);
+title("Ideal sinusoidal signal");
+ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude]);
 
 nexttile;
-plot(simpleSquare);
-title("Input square signal");
+plot(fullTimeSpace, simpleSquare);
+title("Ideal square signal");
+ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(simpleValueNoise);
-title("Input 'realistic' signal");
+hold on;
+plot(fullTimeSpace, simpleValueNoise);
+hold off
+title("Ideal 'realistic' signal");
+ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
+% Input signal with addative white noise
 
 nexttile;
-plot(noisySine);
+plot(fullTimeSpace, noisySine);
 title("Noisy sinusoidal signal");
+ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(noisySquare);
+plot(fullTimeSpace, noisySquare);
 title("Noisy square signal");
+ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(noisyValueNoise);
+plot(fullTimeSpace, noisyValueNoise);
 title("noisy 'realistic' signal");
+ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
+% less-sampled sensor signals
 
 nexttile;
-plot(sensorSine);
+plot(reducedTimeSpace, sensorSine);
 title("Discrete sensor reading for sinusoidal signal");
+ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(sensorSquare);
+plot(reducedTimeSpace, sensorSquare);
 title("Discrete sensor reading for square signal");
+ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(sensorValueNoise);
+plot(reducedTimeSpace, sensorValueNoise);
 title("Discrete sensor reading for 'realistic' signal");
+ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
+
+% Post-algorithm interpreted signal
+
+nexttile;
+plot(reducedTimeSpace, algOutSine);
+title("Noisy sine Lowpass Filtered");
+ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
+
+nexttile;
+plot(reducedTimeSpace, algOutSquare);
+title("Noisy square Lowpass Filtered");
+ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
+
+nexttile;
+plot(reducedTimeSpace, algOutValueNoisese);
+title("Noisy value noise Lowpass Filtered");
+ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
+
+% Evaluation error of algorithm
+
+nexttile;
+plot(reducedTimeSpace, errorSine);
+yline(meanErrorSine, '-', sprintf('Mean error: %0.2f%% of input', meanErrorSine));
+title("Sine error");
+%ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
+
+nexttile;
+plot(reducedTimeSpace, errorSquare);
+yline(meanErrorSquare, '-', sprintf('Mean error: %0.2f%% of input', meanErrorSquare));
+title("Square error");
+%ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
+
+nexttile;
+plot(reducedTimeSpace, errorValueNoise);
+yline(meanErrorValueNoise, '-', sprintf('Mean error: %0.2f%% of input', meanErrorValueNoise));
+title("Value Noise error");
+%ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 t.Padding = 'compact';
 t.TileSpacing = 'compact';
@@ -129,4 +198,18 @@ function returnpoint = cosineInterpolate(spx, spy, epx, epy, step) % start point
     assert(step <= epx);   
     step = (step - spx)/(epx - spx);    % make step a value between 0 and 1 based on its position between start and end
     returnpoint = (1 - cos(step*pi))*0.5 * (epy - spy) + spy;
+end
+
+function returnArray = runningAverage(inputArray, order)
+    returnArray = inputArray;
+    for i = 1:size(inputArray)
+        temptotal = 0;
+        for j = (i - order + 1):i
+            if(j < 1)
+                continue;
+            end
+            temptotal = temptotal + inputArray(j);
+        end
+        returnArray(i) = temptotal/order;
+    end
 end
