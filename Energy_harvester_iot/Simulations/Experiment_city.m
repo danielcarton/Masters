@@ -1,7 +1,7 @@
 %-----------------Simulation parameters--------------
-sampleRate = 32;     % sensor samples per second
+sampleRate = 16;     % sensor samples per second
 samplePeriod = 1/sampleRate;
-simDuration = 2 ;   % Duration of simulation in seconds
+simDuration = 8 ;   % Duration of simulation in seconds
 samples = sampleRate*simDuration;   % total samples made
 interSamples = 8;  % No of datapoints per sample, or datapoints in between each sample
 totalSamples = sampleRate*simDuration*interSamples; % Total number of datapoints of input signal
@@ -21,7 +21,7 @@ minMeasured = -1;  % same^
 levels = 2^resolution;  % Number of levels 
 LSBvalue = (maxMeasured - minMeasured)/levels;  % LSB value of sensor
 noisePower = 25;    % power of signal compared to noise
-maxBiasNoise = 0.1; % maximum amplitude of the bias noise
+maxBiasNoise = 0.2; % maximum amplitude of the bias noise
 noSensors = 5;
 
 %-----------------Create input signals---------------
@@ -62,7 +62,7 @@ end
 clear spx spy epx epy step i j currentPoint nextPoint
 
 %-----------------Add white gaussian noise-----------
-biasNoise = (rand(noSensors) - 0.5)*2*maxBiasNoise; % generate bias voltage offset within parameters from earlier
+biasNoise = (rand(noSensors, 1) - 0.5)*2*maxBiasNoise; % generate bias voltage offset within parameters from earlier
 noisySine = zeros(totalSamples, noSensors);
 noisySquare = zeros(totalSamples, noSensors);
 noisyValueNoise = zeros(totalSamples, noSensors);
@@ -80,18 +80,32 @@ sensorValueNoise = noisyValueNoise(1:interSamples:totalSamples,:);
 sensorSine = round(sensorSine/LSBvalue)*LSBvalue;   % "round" to LSB value of sensor
 sensorSquare = round(sensorSquare/LSBvalue)*LSBvalue;
 sensorValueNoise = round(sensorValueNoise/LSBvalue)*LSBvalue;
+
 %-----------------Output sensor values---------------
 % IDK if theres anything to add here
 
 %-----------------Algorithm time---------------------
-fs = 0.1;
-algOutSine = zeros(totalSamples/interSamples, noSensors);
-algOutSquare = zeros(totalSamples/interSamples, noSensors);
-algOutValueNoise = zeros(totalSamples/interSamples, noSensors);
-for i =1:noSensors
-    algOutSine(:,i) = lowpass(sensorSine(:,i), fs);
-    algOutSquare(:,i) = lowpass(sensorSquare(:,i), fs);
-    algOutValueNoise(:,i) = lowpass(sensorValueNoise(:,i), fs);
+order = 5;
+tempAlgSine = zeros(totalSamples/interSamples,noSensors);
+tempAlgSquare = zeros(totalSamples/interSamples,noSensors);
+tempAlgValueNoise = zeros(totalSamples/interSamples,noSensors);
+
+% take running average of each sensor
+for i = 1:noSensors
+    tempAlgSine = runningAverage(sensorSine, order);
+    tempAlgSquare = runningAverage(sensorSquare, order);
+    tempAlgValueNoise = runningAverage(sensorValueNoise, order);
+end
+
+algOutSine = zeros(totalSamples/interSamples,1);
+algOutSquare = zeros(totalSamples/interSamples,1);
+algOutValueNoise = zeros(totalSamples/interSamples,1);
+
+
+for i = 1:simDuration*sampleRate
+    algOutSine(i) = mean(tempAlgSine(i,:));
+    algOutSquare(i) = mean(tempAlgSquare(i,:));
+    algOutValueNoise(i) = mean(tempAlgValueNoise(i,:));
 end
 
 %-----------------plots------------------------------
@@ -100,24 +114,17 @@ yaxisPadding = 1.25;
 fullTimeSpace = linspace(0, simDuration, totalSamples);
 reducedTimeSpace = linspace(0, simDuration, totalSamples/interSamples);
 
-errorSine = zeros(totalSamples/interSamples, noSensors);
-errorSquare = zeros(totalSamples/interSamples, noSensors);
-errorValueNoise = zeros(totalSamples/interSamples, noSensors);
+errorSine = abs(algOutSine - simpleSine(1:interSamples:totalSamples))/signalAmplitude*100;
+errorSquare = abs(algOutSquare - simpleSquare(1:interSamples:totalSamples))/signalAmplitude*100;
+errorValueNoise = abs(algOutValueNoise - simpleValueNoise(1:interSamples:totalSamples))/signalAmplitude*100;
 
-meanErrorSine = zeros(noSensors, 1);
-meanErrorSquare = zeros(noSensors, 1);
-meanErrorValueNoise = zeros(noSensors, 1);
+meanErrorSine = mean(errorSine);
+meanErrorSquare = mean(errorSquare);
+meanErrorValueNoise = mean(errorValueNoise);
 
-
-for i = 1:noSensors
-    errorSine(:,i) = abs(algOutSine(:,i) - simpleSine(1:interSamples:totalSamples))/signalAmplitude*100;
-    errorSquare(:,i) = abs(algOutSquare(:,i) - simpleSquare(1:interSamples:totalSamples))/signalAmplitude*100;
-    errorValueNoise(:,i) = abs(algOutValueNoise(:,i) - simpleValueNoise(1:interSamples:totalSamples))/signalAmplitude*100;
-    
-    meanErrorSine(i) = mean(errorSine(:,i));
-    meanErrorSquare(i) = mean(errorSquare(:,i));
-    meanErrorValueNoise(i) = mean(errorValueNoise(:,i));
-end
+maxErrorSine = max(errorSine(10:size(errorSine)-10));
+maxErrorSquare = max(errorSquare(10:size(errorSquare)-10));
+maxErrorValueNoise = max(errorValueNoise(10:size(errorValueNoise)-10));
 
 t = tiledlayout(5, 3);
 
@@ -195,25 +202,26 @@ ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
 plot(reducedTimeSpace, errorSine, 'c');
-yline(meanErrorSine, '-', sprintf('Mean error: %0.2f%% of input', meanErrorSine));
+yline(meanErrorSine, '-', sprintf('Mean error: %0.2f%% of input. Max error: %0.2f%% of input', meanErrorSine, maxErrorSine));
 title("Sine error");
 %ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
 plot(reducedTimeSpace, errorSquare, 'c');
-yline(meanErrorSquare, '-', sprintf('Mean error: %0.2f%% of input', meanErrorSquare));
+yline(meanErrorSquare, '-', sprintf('Mean error: %0.2f%% of input. Max error: %0.2f%% of input', meanErrorSquare, maxErrorSquare));
 title("Square error");
 %ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
 plot(reducedTimeSpace, errorValueNoise, 'c');
-yline(meanErrorValueNoise, '-', sprintf('Mean error: %0.2f%% of input', meanErrorValueNoise));
+yline(meanErrorValueNoise, '-', sprintf('Mean error: %0.2f%% of input. Max error: %0.2f%% of input', meanErrorValueNoise, maxErrorValueNoise));
 title("Value Noise error");
 %ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 t.Padding = 'compact';
 t.TileSpacing = 'compact';
 
+    
 
 %-------------------Functions------------
 function returnpoint = cosineInterpolate(spx, spy, epx, epy, step) % start point xy, end point xy, and step between the two
@@ -221,4 +229,18 @@ function returnpoint = cosineInterpolate(spx, spy, epx, epy, step) % start point
     assert(step <= epx);   
     step = (step - spx)/(epx - spx);    % make step a value between 0 and 1 based on its position between start and end
     returnpoint = (1 - cos(step*pi))*0.5 * (epy - spy) + spy;
+end
+
+function returnArray = runningAverage(inputArray, order)
+    returnArray = inputArray;
+    for i = 1:size(inputArray)
+        temptotal = 0;
+        for j = (i - order + 1):i
+            if(j < 1)
+                continue;
+            end
+            temptotal = temptotal + inputArray(j);
+        end
+        returnArray(i) = temptotal/order;
+    end
 end
