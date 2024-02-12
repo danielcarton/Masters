@@ -1,13 +1,14 @@
 %-----------------Simulation parameters--------------
-sampleRate = 64;     % sensor samples per second
+sampleRate = 32;     % sensor samples per second
 samplePeriod = 1/sampleRate;
-simDuration = 8 ;   % Duration of simulation in seconds
+simDuration = 2 ;   % Duration of simulation in seconds
 samples = sampleRate*simDuration;   % total samples made
-interSamples = 32;  % No of datapoints per sample, or datapoints in between each sample
+interSamples = 8;  % No of datapoints per sample, or datapoints in between each sample
 totalSamples = sampleRate*simDuration*interSamples; % Total number of datapoints of input signal
 signalFrequency = 1;    % Signal Frequency
 dutyCycle = 0.5;    % Duty cycle of square-wave signal
-signalAmplitude = 1;% Amplitude of input signal
+signalAmplitude = 1;% Ampli tude of input signal
+
 
 %-----------------value noise stuff------------------
 valueNoiseFrequency = 2; % random data points generated per second of simulation
@@ -21,6 +22,7 @@ levels = 2^resolution;  % Number of levels
 LSBvalue = (maxMeasured - minMeasured)/levels;  % LSB value of sensor
 noisePower = 25;    % power of signal compared to noise
 maxBiasNoise = 0.1; % maximum amplitude of the bias noise
+noSensors = 5;
 
 %-----------------Create input signals---------------
 simpleSine = zeros(totalSamples, 1);    % SineWave
@@ -60,16 +62,20 @@ end
 clear spx spy epx epy step i j currentPoint nextPoint
 
 %-----------------Add white gaussian noise-----------
-biasNoise = (rand() - 0.5)*2*maxBiasNoise; % generate bias voltage offset within parameters from earlier
-
-noisySine = awgn(simpleSine, noisePower, "measured") + biasNoise;
-noisySquare = awgn(simpleSquare, noisePower, "measured") + biasNoise;
-noisyValueNoise = awgn(simpleValueNoise, noisePower, "measured") + biasNoise;
+biasNoise = (rand(noSensors) - 0.5)*2*maxBiasNoise; % generate bias voltage offset within parameters from earlier
+noisySine = zeros(totalSamples, noSensors);
+noisySquare = zeros(totalSamples, noSensors);
+noisyValueNoise = zeros(totalSamples, noSensors);
+for i = 1:noSensors
+    noisySine(:,i) = awgn(simpleSine, noisePower, "measured") + biasNoise(i);
+    noisySquare(:,i) = awgn(simpleSquare, noisePower, "measured") + biasNoise(i);
+    noisyValueNoise(:,i) = awgn(simpleValueNoise, noisePower, "measured") + biasNoise(i);
+end
 
 %-----------------Add sensor error-------------------
-sensorSine = noisySine(1:interSamples:totalSamples);    % copy signals at sample rate
-sensorSquare = noisySquare(1:interSamples:totalSamples);
-sensorValueNoise = noisyValueNoise(1:interSamples:totalSamples);
+sensorSine = noisySine(1:interSamples:totalSamples,:);    % copy signals at sample rate
+sensorSquare = noisySquare(1:interSamples:totalSamples,:);
+sensorValueNoise = noisyValueNoise(1:interSamples:totalSamples,:);
 
 sensorSine = round(sensorSine/LSBvalue)*LSBvalue;   % "round" to LSB value of sensor
 sensorSquare = round(sensorSquare/LSBvalue)*LSBvalue;
@@ -78,11 +84,15 @@ sensorValueNoise = round(sensorValueNoise/LSBvalue)*LSBvalue;
 % IDK if theres anything to add here
 
 %-----------------Algorithm time---------------------
-order = 5;
-
-algOutSine = runningAverage(sensorSine, order);
-algOutSquare = runningAverage(sensorSquare, order);
-algOutValueNoisese = runningAverage(sensorValueNoise, order);
+fs = 0.1;
+algOutSine = zeros(totalSamples/interSamples, noSensors);
+algOutSquare = zeros(totalSamples/interSamples, noSensors);
+algOutValueNoise = zeros(totalSamples/interSamples, noSensors);
+for i =1:noSensors
+    algOutSine(:,i) = lowpass(sensorSine(:,i), fs);
+    algOutSquare(:,i) = lowpass(sensorSquare(:,i), fs);
+    algOutValueNoise(:,i) = lowpass(sensorValueNoise(:,i), fs);
+end
 
 %-----------------plots------------------------------
 yaxisPadding = 1.25;
@@ -90,17 +100,20 @@ yaxisPadding = 1.25;
 fullTimeSpace = linspace(0, simDuration, totalSamples);
 reducedTimeSpace = linspace(0, simDuration, totalSamples/interSamples);
 
-errorSine = abs(algOutSine - simpleSine(1:interSamples:totalSamples))/signalAmplitude*100;
-errorSquare = abs(algOutSquare - simpleSquare(1:interSamples:totalSamples))/signalAmplitude*100;
-errorValueNoise = abs(algOutValueNoisese - simpleValueNoise(1:interSamples:totalSamples))/signalAmplitude*100;
+errorSine = zeros(totalSamples/interSamples, noSensors);
+errorSquare = zeros(totalSamples/interSamples, noSensors);
+errorValueNoise = zeros(totalSamples/interSamples, noSensors);
 
-meanErrorSine = mean(errorSine);
-meanErrorSquare = mean(errorSquare);
-meanErrorValueNoise = mean(errorValueNoise);
 
-maxErrorSine = max(errorSine(10:size(errorSine)-10));
-maxErrorSquare = max(errorSquare(10:size(errorSquare)-10));
-maxErrorValueNoise = max(errorValueNoise(10:size(errorValueNoise)-10));
+for i = 1:noSensors
+    errorSine(:,i) = abs(algOutSine(:,i) - simpleSine(1:interSamples:totalSamples))/signalAmplitude*100;
+    errorSquare(:,i) = abs(algOutSquare(:,i) - simpleSquare(1:interSamples:totalSamples))/signalAmplitude*100;
+    errorValueNoise(:,i) = abs(algOutValueNoise(:,i) - simpleValueNoise(1:interSamples:totalSamples))/signalAmplitude*100;
+    
+    meanErrorSine(:,i) = mean(errorSine(:,i));
+    meanErrorSquare(:,i) = mean(errorSquare(:,i));
+    meanErrorValueNoise(:,i) = mean(errorValueNoise(:,i));
+end
 
 t = tiledlayout(5, 3);
 
@@ -170,7 +183,7 @@ title("Noisy square Filtered");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, algOutValueNoisese);
+plot(reducedTimeSpace, algOutValueNoise);
 title("Noisy value noise Filtered");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
@@ -178,26 +191,25 @@ ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
 plot(reducedTimeSpace, errorSine, 'c');
-yline(meanErrorSine, '-', sprintf('Mean error: %0.2f%% of input. Max error: %0.2f%% of input', meanErrorSine, maxErrorSine));
+yline(meanErrorSine, '-', sprintf('Mean error: %0.2f%% of input', meanErrorSine));
 title("Sine error");
 %ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
 plot(reducedTimeSpace, errorSquare, 'c');
-yline(meanErrorSquare, '-', sprintf('Mean error: %0.2f%% of input. Max error: %0.2f%% of input', meanErrorSquare, maxErrorSquare));
+yline(meanErrorSquare, '-', sprintf('Mean error: %0.2f%% of input', meanErrorSquare));
 title("Square error");
 %ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
 plot(reducedTimeSpace, errorValueNoise, 'c');
-yline(meanErrorValueNoise, '-', sprintf('Mean error: %0.2f%% of input. Max error: %0.2f%% of input', meanErrorValueNoise, maxErrorValueNoise));
+yline(meanErrorValueNoise, '-', sprintf('Mean error: %0.2f%% of input', meanErrorValueNoise));
 title("Value Noise error");
 %ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 t.Padding = 'compact';
 t.TileSpacing = 'compact';
 
-    
 
 %-------------------Functions------------
 function returnpoint = cosineInterpolate(spx, spy, epx, epy, step) % start point xy, end point xy, and step between the two
@@ -205,18 +217,4 @@ function returnpoint = cosineInterpolate(spx, spy, epx, epy, step) % start point
     assert(step <= epx);   
     step = (step - spx)/(epx - spx);    % make step a value between 0 and 1 based on its position between start and end
     returnpoint = (1 - cos(step*pi))*0.5 * (epy - spy) + spy;
-end
-
-function returnArray = runningAverage(inputArray, order)
-    returnArray = inputArray;
-    for i = 1:size(inputArray)
-        temptotal = 0;
-        for j = (i - order + 1):i
-            if(j < 1)
-                continue;
-            end
-            temptotal = temptotal + inputArray(j);
-        end
-        returnArray(i) = temptotal/order;
-    end
 end

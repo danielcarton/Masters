@@ -8,7 +8,6 @@ totalSamples = sampleRate*simDuration*interSamples; % Total number of datapoints
 signalFrequency = 1;    % Signal Frequency
 dutyCycle = 0.5;    % Duty cycle of square-wave signal
 signalAmplitude = 1;% Amplitude of input signal
-noisePower = 25;    % power of signal compared to noise
 
 %-----------------value noise stuff------------------
 valueNoiseFrequency = 2; % random data points generated per second of simulation
@@ -20,6 +19,8 @@ maxMeasured = 1;   % sensor max value, gotta be greater than signal amplitude
 minMeasured = -1;  % same^
 levels = 2^resolution;  % Number of levels 
 LSBvalue = (maxMeasured - minMeasured)/levels;  % LSB value of sensor
+noisePower = 25;    % power of signal compared to noise
+maxBiasNoise = 0.1; % maximum amplitude of the bias noise
 
 %-----------------Create input signals---------------
 simpleSine = zeros(totalSamples, 1);    % SineWave
@@ -59,9 +60,11 @@ end
 clear spx spy epx epy step i j currentPoint nextPoint
 
 %-----------------Add white gaussian noise-----------
-noisySine = awgn(simpleSine, noisePower, "measured");
-noisySquare = awgn(simpleSquare, noisePower, "measured");
-noisyValueNoise = awgn(simpleValueNoise, noisePower, "measured");
+biasNoise = (rand() - 0.5)*2*maxBiasNoise; % generate bias voltage offset within parameters from earlier
+
+noisySine = awgn(simpleSine, noisePower, "measured") + biasNoise;
+noisySquare = awgn(simpleSquare, noisePower, "measured") + biasNoise;
+noisyValueNoise = awgn(simpleValueNoise, noisePower, "measured") + biasNoise;
 
 %-----------------Add sensor error-------------------
 sensorSine = noisySine(1:interSamples:totalSamples);    % copy signals at sample rate
@@ -100,18 +103,18 @@ t = tiledlayout(5, 3);
 % Ideal input signals
 
 nexttile;
-plot(fullTimeSpace, simpleSine);
+plot(fullTimeSpace, simpleSine, 'b');
 title("Ideal sinusoidal signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude]);
 
 nexttile;
-plot(fullTimeSpace, simpleSquare);
+plot(fullTimeSpace, simpleSquare, 'b');
 title("Ideal square signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
 hold on;
-plot(fullTimeSpace, simpleValueNoise);
+plot(fullTimeSpace, simpleValueNoise, 'b');
 hold off
 title("Ideal 'realistic' signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
@@ -119,34 +122,34 @@ ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 % Input signal with addative white noise
 
 nexttile;
-plot(fullTimeSpace, noisySine);
+plot(fullTimeSpace, noisySine, 'r');
 title("Noisy sinusoidal signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(fullTimeSpace, noisySquare);
+plot(fullTimeSpace, noisySquare, 'r');
 title("Noisy square signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(fullTimeSpace, noisyValueNoise);
+plot(fullTimeSpace, noisyValueNoise, 'r');
 title("noisy 'realistic' signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 % less-sampled sensor signals
 
 nexttile;
-plot(reducedTimeSpace, sensorSine);
+plot(reducedTimeSpace, sensorSine, 'g');
 title("Discrete sensor reading for sinusoidal signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, sensorSquare);
+plot(reducedTimeSpace, sensorSquare, 'g');
 title("Discrete sensor reading for square signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, sensorValueNoise);
+plot(reducedTimeSpace, sensorValueNoise, 'g');
 title("Discrete sensor reading for 'realistic' signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
@@ -154,43 +157,41 @@ ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
 plot(reducedTimeSpace, algOutSine);
-title("Noisy sine Lowpass Filtered");
+title("Noisy sine Filtered");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
 plot(reducedTimeSpace, algOutSquare);
-title("Noisy square Lowpass Filtered");
+title("Noisy square Filtered");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
 plot(reducedTimeSpace, algOutValueNoisese);
-title("Noisy value noise Lowpass Filtered");
+title("Noisy value noise Filtered");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 % Evaluation error of algorithm
 
 nexttile;
-plot(reducedTimeSpace, errorSine);
+plot(reducedTimeSpace, errorSine, 'c');
 yline(meanErrorSine, '-', sprintf('Mean error: %0.2f%% of input', meanErrorSine));
 title("Sine error");
 %ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, errorSquare);
+plot(reducedTimeSpace, errorSquare, 'c');
 yline(meanErrorSquare, '-', sprintf('Mean error: %0.2f%% of input', meanErrorSquare));
 title("Square error");
 %ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, errorValueNoise);
+plot(reducedTimeSpace, errorValueNoise, 'c');
 yline(meanErrorValueNoise, '-', sprintf('Mean error: %0.2f%% of input', meanErrorValueNoise));
 title("Value Noise error");
 %ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 t.Padding = 'compact';
 t.TileSpacing = 'compact';
-
-
 
 
 %-------------------Functions------------
