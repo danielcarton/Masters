@@ -110,7 +110,7 @@ tempTime = linspace(0, simDuration, samples);
 alphaReg = alpha(tempTime,sensorTemp,samples);
 betaReg = beta(tempTime,sensorTemp, samples, alpha(tempTime,sensorTemp,samples));
 
-linReg = @(x) alphaReg*x + betaReg:
+linReg = @(x) alphaReg*x + betaReg;
 
 
 averageNoisyTemp = sum(noisyTemp)/samples
