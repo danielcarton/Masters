@@ -1,7 +1,7 @@
 %-----------------Simulation parameters--------------
 sampleRate = 32;     % sensor samples per second
 samplePeriod = 1/sampleRate;
-simDuration = 5;   % Duration of simulation in seconds
+simDuration = 2;   % Duration of simulation in seconds
 samples = sampleRate*simDuration;   % total samples made
 interSamples = 16;  % No of datapoints per sample, or datapoints in between each sample
 totalSamples = sampleRate*simDuration*interSamples; % Total number of datapoints of input signal
@@ -21,8 +21,8 @@ maxMeasured = 1;   % sensor max value, gotta be greater than signal amplitude
 minMeasured = -1;  % same^
 levels = 2^resolution;  % Number of levels 
 LSBvalue = (maxMeasured - minMeasured)/levels;  % LSB value of sensor
-noisePower = 25;    % power of signal compared to noise
-maxBiasNoise = 1; % maximum amplitude of the bias noise
+noisePower = 50;    % power of signal compared to noise
+maxBiasNoise = 0.1; % maximum amplitude of the bias noise
 noSensors = 1;
 
 %-----------------Create input signals---------------
@@ -192,7 +192,7 @@ nexttile;
 hold on;
 plot(tempTime, realTemp, 'b');
 hold off
-title("Ideal temp signal");
+title("Real temperature");
 
 % Input signal with addative white noise
 
@@ -270,10 +270,10 @@ title("Square error");
 % title("Value Noise error");
 % %ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
-nexttile;
-plot(tempTime, abs(realTemp-noisyTemp), 'c');
-yline(meanErrorTemp, '-', sprintf('Mean error: %0.2f% of input', meanErrorTemp));
-title("Temp error");
+% nexttile;
+% plot(tempTime, abs(realTemp-noisyTemp), 'c');
+% yline(meanErrorTemp, '-', sprintf('Mean error: %0.2f% of input', meanErrorTemp));
+% title("Temp error");
 %ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 t.Padding = 'compact';
@@ -288,27 +288,27 @@ function returnpoint = cosineInterpolate(spx, spy, epx, epy, step) % start point
 end
 
 
-function returnPoint = alpha(reducedTimeSpace,sensorValue,samples)
+function returnPoint = alpha(tempTime,sensorValue,samples)
     xi = 0;
     xi2 = 0;
     yi = 0;
     xiyi = 0;
 
     for i = 1:samples
-        xi = xi + reducedTimeSpace(i);
-        xi2 = xi2 + reducedTimeSpace(i)^2;
+        xi = xi + tempTime(i);
+        xi2 = xi2 + tempTime(i)^2;
         yi = yi + sensorValue(i);
-        xiyi = xiyi + reducedTimeSpace(i)*sensorValue(i);
+        xiyi = xiyi + tempTime(i)*sensorValue(i);
     end
-    returnPoint = (xiyi - xi*yi)/(xi2-xi^2);
+    returnPoint = (samples*xiyi - xi*yi)/(samples*xi2-xi^2);
 end
 
-function returnPoint = beta(reducedTimeSpace,sensorValue,samples, alpha)
+function returnPoint = beta(tempTime,sensorValue,samples, alpha)
     xi = 0;
     yi = 0;
 
     for i = 1:samples
-        xi = xi + reducedTimeSpace(i);
+        xi = xi + tempTime(i);
         yi = yi + sensorValue(i);
     end
     returnPoint = (1/samples)*yi - alpha*(1/samples)*xi;
