@@ -2,7 +2,7 @@ clear all
 %-----------------Simulation parameters--------------
 sampleRate = 32;     % sensor samples per second
 samplePeriod = 1/sampleRate;
-simDuration = 3;   % Duration of simulation in seconds
+simDuration = 10;   % Duration of simulation in seconds
 samples = sampleRate*simDuration;   % total samples made
 interSamples = 16;  % No of datapoints per sample, or datapoints in between each sample
 totalSamples = sampleRate*simDuration*interSamples; % Total number of datapoints of input signal
@@ -23,7 +23,7 @@ minMeasured = -1;  % same^
 levels = 2^resolution;  % Number of levels 
 LSBvalue = (maxMeasured - minMeasured)/levels;  % LSB value of sensor
 noisePower = 50;    % power of signal compared to noise
-maxBiasNoise = 0.2; % maximum amplitude of the bias noise
+maxBiasNoise = 0.1; % maximum amplitude of the bias noise
 noSensors = 1;
 
 %-----------------Create input signals---------------
@@ -67,7 +67,7 @@ noSensors = 1;
 
 startTemp = 25;
 
-realTemp = -0.05 + (0.05+0.05)*rand(samples,1) + startTemp;
+realTemp = -0.01 + (0.01+0.01)*rand(samples,1) + startTemp;
 
 % realTemp = zeros(samples,1);
 
@@ -317,8 +317,6 @@ t.TileSpacing = 'compact';
 % end
 
 
-
-
 function returnPoint = alpha(tempTime,sensorValue,samples)
     xi = 0;
     xi2 = 0;
@@ -350,6 +348,7 @@ function returnPoint = kalman(z)
     persistent x P
     persistent firstRun
     
+    
     if isempty(firstRun)
       A = 1;
       H = 1;
@@ -357,20 +356,21 @@ function returnPoint = kalman(z)
       Q = 0;
       R = 4;
     
-      x = 10;
-      P =  8;
+      x = 14;
+      P =  6;
       
       firstRun = 1;  
     end
     
     % Kalman algorithm  
-    xp = A*x;           
-    Pp = A*P*A' + Q;   
+    xp = A*x;           % I. Prediction of estimate
+    Pp = A*P*A' + Q;    %    Prediction of error cov
     
-    K = Pp*H'*inv(H*Pp*H' + R); 
+    K = Pp*H'*inv(H*Pp*H' + R); % II. Computation of Kalman gain
     
-    x = xp + K*(z - H*xp); 
-    P = Pp - K*H*Pp;     
+    x = xp + K*(z - H*xp); % III. Comp. of state estimate
+    P = Pp - K*H*Pp;       % IV. Comp. of error cov.
+    
     
     returnPoint = x;
 end
