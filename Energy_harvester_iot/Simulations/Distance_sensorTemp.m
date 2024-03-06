@@ -1,7 +1,7 @@
 clear all
 clear Distance_sensor.m
 % Define parameters
-simDuration = 10;
+simDuration = 3;
 t = 0:0.05:simDuration; % Time vector from 0 to 100 seconds with 0.1 second intervals
 sampleRate = 32;
 % num_samples = sampleRate * simDuration;
@@ -10,6 +10,7 @@ max_distance = 2000; % Maximum measurable distance by the sensor (in millimeters
 min_distance = 100; % Minimum measurable distance by the sensor (in millimeters)
 change_interval = 2; % Interval for changing distance values (in seconds)
 noise_amplitude = 36; % Amplitude of noise (in millimeters)
+num_sensors = 1;
 
 
 % Generate simulated distance sensor output with reduced variability
@@ -28,25 +29,36 @@ distance_smoothed = movmean(distance, filter_window_size);
 
 noNoiseDistance = distance_smoothed;
 
-% Add noise to the sensor output (optional)
-distanceNoisy = distance_smoothed + noise_amplitude * randn(size(distance_smoothed));
-
+% Add noise to the sensor outputs
+distanceNoisy = zeros(num_sensors, num_samples);
+for i = 1:num_sensors
+    distanceNoisy(i,:) = distance_smoothed + noise_amplitude * randn(size(distance_smoothed));
+end
 
 % Apply Kalman filtering
 
 distanceFiltered = zeros(1, num_samples);
+votingArray = zeros(num_sensors, 1);
 
 for i = 1:num_samples
-    x = kalman(distanceNoisy(i));
-    
+    for j = 1:num_sensors
+        votingArray(j) = kalman(distanceNoisy(j,i));
+    end
+    if median(votingArray) - min(votingArray) < max(votingArray) - median(votingArray)
+        x = (min(votingArray) + median(votingArray))/2;
+    else
+        x = (max(votingArray) + median(votingArray))/2;
+    end
     distanceFiltered(i) = x;
 end
 
+% Low-pass filter
 % distanceFiltered = lowpass(distanceFiltered, 0.1);
 
 % Calculate absolute error between the ideal and noisy and filtered signals
-errorNoisy = abs(noNoiseDistance-distanceNoisy);
-
+for i = 1:num_sensors
+    errorNoisy = abs(noNoiseDistance-distanceNoisy(i,:));
+end
 errorFiltered = abs(noNoiseDistance-distanceFiltered);
 
 
@@ -79,6 +91,7 @@ hold off
 
 
 sum(errorFiltered-errorNoisy)/num_samples
+save('Distance_sensorTemp','-append')
 
 function returnPoint = kalman(z)
     persistent A H Q R 
@@ -111,4 +124,6 @@ function returnPoint = kalman(z)
     P = Pp - K*H*Pp;     
     
     returnPoint = x;
+save('Distance_sensorTemp','-append')
 end
+

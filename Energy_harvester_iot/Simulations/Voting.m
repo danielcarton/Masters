@@ -1,7 +1,7 @@
 clear all
 clear Distance_sensor.m
 % Define parameters
-simDuration = 3;
+simDuration = 10;
 t = 0:0.05:simDuration; % Time vector from 0 to 100 seconds with 0.1 second intervals
 sampleRate = 32;
 % num_samples = sampleRate * simDuration;
@@ -10,7 +10,7 @@ max_distance = 2000; % Maximum measurable distance by the sensor (in millimeters
 min_distance = 100; % Minimum measurable distance by the sensor (in millimeters)
 change_interval = 2; % Interval for changing distance values (in seconds)
 noise_amplitude = 36; % Amplitude of noise (in millimeters)
-num_sensors = 1;
+num_sensors = 3;
 
 
 % Generate simulated distance sensor output with reduced variability
@@ -42,7 +42,7 @@ votingArray = zeros(num_sensors, 1);
 
 for i = 1:num_samples
     for j = 1:num_sensors
-        votingArray(j) = kalman(distanceNoisy(j,i));
+        votingArray(j) = distanceNoisy(j,i);
     end
     if median(votingArray) - min(votingArray) < max(votingArray) - median(votingArray)
         x = (min(votingArray) + median(votingArray))/2;
@@ -56,9 +56,8 @@ end
 % distanceFiltered = lowpass(distanceFiltered, 0.1);
 
 % Calculate absolute error between the ideal and noisy and filtered signals
-for i = 1:num_sensors
-    errorNoisy = abs(noNoiseDistance-distanceNoisy(i,:));
-end
+errorNoisy = abs(noNoiseDistance-mean(distanceNoisy));
+
 errorFiltered = abs(noNoiseDistance-distanceFiltered);
 
 
