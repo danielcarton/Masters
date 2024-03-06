@@ -1,9 +1,8 @@
 %-----------------Simulation parameters--------------
 sampleRate = 16;     % sensor samples per second
-samplePeriod = 1/sampleRate;
-simDuration = 8 ;   % Duration of simulation in seconds
+simDuration = 4 ;   % Duration of simulation in seconds
 samples = sampleRate*simDuration;   % total samples made
-interSamples = 8;  % No of datapoints per sample, or datapoints in between each sample
+interSamples = 1;  % No of datapoints per sample, or datapoints in between each sample
 totalSamples = sampleRate*simDuration*interSamples; % Total number of datapoints of input signal
 signalFrequency = 1;    % Signal Frequency
 dutyCycle = 0.5;    % Duty cycle of square-wave signal
@@ -11,11 +10,11 @@ signalAmplitude = 1;% Ampli tude of input signal
 
 
 %-----------------value noise stuff------------------
-valueNoiseFrequency = 2; % random data points generated per second of simulation
+valueNoiseFrequency = 4; % random data points generated per second of simulation
 valueNoiseDatapoints = valueNoiseFrequency * simDuration;
 
 %-----------------Sensor parameters------------------
-resolution = 8;     % bits of resolution
+resolution = 16;     % bits of resolution
 maxMeasured = 1;   % sensor max value, gotta be greater than signal amplitude
 minMeasured = -1;  % same^
 levels = 2^resolution;  % Number of levels 
@@ -62,7 +61,7 @@ end
 clear spx spy epx epy step i j currentPoint nextPoint
 
 %-----------------Add white gaussian noise-----------
-biasNoise = (rand(noSensors, 1) - 0.5)*2*maxBiasNoise; % generate bias voltage offset within parameters from earlier
+biasNoise = (rand(noSensors, 1)-0.5)*2*maxBiasNoise; % generate bias voltage offset within parameters from earlier
 noisySine = zeros(totalSamples, noSensors);
 noisySquare = zeros(totalSamples, noSensors);
 noisyValueNoise = zeros(totalSamples, noSensors);
@@ -150,51 +149,51 @@ ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 % Input signal with addative white noise
 
 nexttile;
-plot(fullTimeSpace, noisySine, 'r');
+plot(fullTimeSpace, noisySine);
 title("Noisy sinusoidal signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(fullTimeSpace, noisySquare, 'r');
+plot(fullTimeSpace, noisySquare);
 title("Noisy square signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(fullTimeSpace, noisyValueNoise, 'r');
+plot(fullTimeSpace, noisyValueNoise);
 title("noisy 'realistic' signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 % less-sampled sensor signals
 
 nexttile;
-plot(reducedTimeSpace, sensorSine, 'g');
+plot(reducedTimeSpace, sensorSine);
 title("Discrete sensor reading for sinusoidal signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, sensorSquare, 'g');
+plot(reducedTimeSpace, sensorSquare);
 title("Discrete sensor reading for square signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, sensorValueNoise, 'g');
+plot(reducedTimeSpace, sensorValueNoise);
 title("Discrete sensor reading for 'realistic' signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 % Post-algorithm interpreted signal
 
 nexttile;
-plot(reducedTimeSpace, algOutSine);
+plot(reducedTimeSpace, algOutSine,'r');
 title("Noisy sine Filtered");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, algOutSquare);
+plot(reducedTimeSpace, algOutSquare,'r');
 title("Noisy square Filtered");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, algOutValueNoise);
+plot(reducedTimeSpace, algOutValueNoise,'r');
 title("Noisy value noise Filtered");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
@@ -220,6 +219,7 @@ title("Value Noise error");
 
 t.Padding = 'compact';
 t.TileSpacing = 'compact';
+
 
     
 
