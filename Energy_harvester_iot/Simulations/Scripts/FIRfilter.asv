@@ -1,0 +1,10 @@
+
+
+function estimate = CustomFIR(Sensordata, TimeStep)
+
+filter = [];    % replace with calculated values
+
+for i = 
+
+
+end
