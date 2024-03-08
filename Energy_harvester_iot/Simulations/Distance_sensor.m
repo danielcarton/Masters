@@ -1,4 +1,4 @@
-clear all
+clear
 clear Distance_sensor.m
 % Define parameters
 simDuration = 3;
@@ -10,7 +10,7 @@ max_distance = 2000; % Maximum measurable distance by the sensor (in millimeters
 min_distance = 100; % Minimum measurable distance by the sensor (in millimeters)
 change_interval = 2; % Interval for changing distance values (in seconds)
 noise_amplitude = 36; % Amplitude of noise (in millimeters)
-num_sensors = 1;
+num_sensors = 5;
 
 
 % Generate simulated distance sensor output with reduced variability

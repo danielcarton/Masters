@@ -1,7 +1,7 @@
 clear all
 clear Distance_sensor.m
 % Define parameters
-simDuration = 10;
+simDuration = 1;
 t = 0:0.05:simDuration; % Time vector from 0 to 100 seconds with 0.1 second intervals
 sampleRate = 32;
 % num_samples = sampleRate * simDuration;
@@ -35,7 +35,7 @@ for i = 1:num_sensors
     distanceNoisy(i,:) = distance_smoothed + noise_amplitude * randn(size(distance_smoothed));
 end
 
-% Apply Kalman filtering
+% Apply simple voting taking the average of the two closest values
 
 distanceFiltered = zeros(1, num_samples);
 votingArray = zeros(num_sensors, 1);
@@ -56,7 +56,9 @@ end
 % distanceFiltered = lowpass(distanceFiltered, 0.1);
 
 % Calculate absolute error between the ideal and noisy and filtered signals
-errorNoisy = abs(noNoiseDistance-mean(distanceNoisy));
+for i = 1:num_sensors
+    errorNoisy = abs(noNoiseDistance-distanceNoisy(i,:));
+end
 
 errorFiltered = abs(noNoiseDistance-distanceFiltered);
 
