@@ -1,13 +1,12 @@
 %-----------------Simulation parameters--------------
-sampleRate = 32;     % sensor samples per second
-samplePeriod = 1/sampleRate;
-simDuration = 2 ;   % Duration of simulation in seconds
+sampleRate = 4;     % sensor samples per second
+simDuration = 8 ;   % Duration of simulation in seconds
 samples = sampleRate*simDuration;   % total samples made
-interSamples = 8;  % No of datapoints per sample, or datapoints in between each sample
+interSamples = 64;  % No of datapoints per sample, or datapoints in between each sample
 totalSamples = sampleRate*simDuration*interSamples; % Total number of datapoints of input signal
-signalFrequency = 1;    % Signal Frequency
+signalFrequency = 0.25;    % Signal Frequency
 dutyCycle = 0.5;    % Duty cycle of square-wave signal
-signalAmplitude = 1;% Ampli tude of input signal
+signalAmplitude = 55;% Ampli tude of input signal
 
 
 %-----------------value noise stuff------------------
@@ -15,16 +14,16 @@ valueNoiseFrequency = 2; % random data points generated per second of simulation
 valueNoiseDatapoints = valueNoiseFrequency * simDuration;
 
 %-----------------Sensor parameters------------------
-resolution = 8;     % bits of resolution
-maxMeasured = 1;   % sensor max value, gotta be greater than signal amplitude
-minMeasured = -1;  % same^
+resolution = 16;     % bits of resolution
+maxMeasured = 125;   % sensor max value, gotta be greater than signal amplitude
+minMeasured = -55;  % same^
 levels = 2^resolution;  % Number of levels 
 LSBvalue = (maxMeasured - minMeasured)/levels;  % LSB value of sensor
-noisePower = 25;    % power of signal compared to noise
-maxBiasNoise = 0.05; % maximum amplitude of the bias noise
-noSensors = 5;
+signalPower = 95;    % power of signal compared to noise in dB
+maxBiasNoise = 0.07; % maximum amplitude of the bias noise
+noSensors = 6;
 
-%-----------------Create input signals---------------
+%-----------------Creae input signals---------------
 simpleSine = zeros(totalSamples, 1);    % SineWave
 simpleSquare = zeros(totalSamples, 1);  % Square wave 
 
@@ -62,14 +61,14 @@ end
 clear spx spy epx epy step i j currentPoint nextPoint
 
 %-----------------Add white gaussian noise-----------
-biasNoise = (rand(noSensors, 1) - 0.5)*2*maxBiasNoise; % generate bias voltage offset within parameters from earlier
+biasNoise = (rand(noSensors, 1)-0.5)*2*maxBiasNoise; % generate bias voltage offset within parameters from earlier
 noisySine = zeros(totalSamples, noSensors);
 noisySquare = zeros(totalSamples, noSensors);
 noisyValueNoise = zeros(totalSamples, noSensors);
 for i = 1:noSensors
-    noisySine(:,i) = awgn(simpleSine, noisePower, "measured") + biasNoise(i);
-    noisySquare(:,i) = awgn(simpleSquare, noisePower, "measured") + biasNoise(i);
-    noisyValueNoise(:,i) = awgn(simpleValueNoise, noisePower, "measured") + biasNoise(i);
+    noisySine(:,i) = awgn(simpleSine, signalPower, "measured") + biasNoise(i);
+    noisySquare(:,i) = awgn(simpleSquare, signalPower, "measured") + biasNoise(i);
+    noisyValueNoise(:,i) = awgn(simpleValueNoise, signalPower, "measured") + biasNoise(i);
 end
 
 %-----------------Add sensor error-------------------
@@ -85,28 +84,16 @@ sensorValueNoise = round(sensorValueNoise/LSBvalue)*LSBvalue;
 % IDK if theres anything to add here
 
 %-----------------Algorithm time---------------------
-order = 5;
-tempAlgSine = zeros(totalSamples/interSamples,noSensors);
-tempAlgSquare = zeros(totalSamples/interSamples,noSensors);
-tempAlgValueNoise = zeros(totalSamples/interSamples,noSensors);
+algOutSine = zeros(totalSamples/interSamples, 1);
+algOutSquare = zeros(totalSamples/interSamples, 1);
+algOutValueNoise = zeros(totalSamples/interSamples, 1);
 
-% take running average of each sensor
-for i = 1:noSensors
-    tempAlgSine = runningAverage(sensorSine, order);
-    tempAlgSquare = runningAverage(sensorSquare, order);
-    tempAlgValueNoise = runningAverage(sensorValueNo, order);
+for i = 1:totalSamples/interSamples
+    algOutSine(i) = MultiSensorFusionSet(sensorSine, i);
+    algOutSquare(i) = MultiSensorFusionSet(sensorSquare, i);
+    algOutValueNoise(i) = MultiSensorFusionSet(sensorValueNoise, i);
 end
 
-algOutSine = zeros(totalSamples/interSamples,1);
-algOutSquare = zeros(totalSamples/interSamples,1);
-algOutValueNoise = zeros(totalSamples/interSamples,1);
-
-
-for i = 1:simDuration*sampleRate
-    algOutSine(i) = mean(tempAlgSine(i,:));
-    algOutSquare(i) = mean(tempAlgSquare(i,:));
-    algOutValueNoise(i) = mean(tempAlgValueNoise(i,:));
-end
 
 %-----------------plots------------------------------
 yaxisPadding = 1.25;
@@ -150,51 +137,51 @@ ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 % Input signal with addative white noise
 
 nexttile;
-plot(fullTimeSpace, noisySine, 'r');
+plot(fullTimeSpace, noisySine);
 title("Noisy sinusoidal signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(fullTimeSpace, noisySquare, 'r');
+plot(fullTimeSpace, noisySquare);
 title("Noisy square signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(fullTimeSpace, noisyValueNoise, 'r');
+plot(fullTimeSpace, noisyValueNoise);
 title("noisy 'realistic' signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 % less-sampled sensor signals
 
 nexttile;
-plot(reducedTimeSpace, sensorSine, 'g');
+plot(reducedTimeSpace, sensorSine);
 title("Discrete sensor reading for sinusoidal signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, sensorSquare, 'g');
+plot(reducedTimeSpace, sensorSquare);
 title("Discrete sensor reading for square signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, sensorValueNoise, 'g');
+plot(reducedTimeSpace, sensorValueNoise);
 title("Discrete sensor reading for 'realistic' signal");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 % Post-algorithm interpreted signal
 
 nexttile;
-plot(reducedTimeSpace, algOutSine);
+plot(reducedTimeSpace, algOutSine,'r');
 title("Noisy sine Filtered");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, algOutSquare);
+plot(reducedTimeSpace, algOutSquare,'r');
 title("Noisy square Filtered");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
 nexttile;
-plot(reducedTimeSpace, algOutValueNoise);
+plot(reducedTimeSpace, algOutValueNoise,'r');
 title("Noisy value noise Filtered");
 ylim([-1*yaxisPadding*signalAmplitude, yaxisPadding*signalAmplitude])
 
@@ -221,6 +208,7 @@ title("Value Noise error");
 t.Padding = 'compact';
 t.TileSpacing = 'compact';
 
+
     
 
 %-------------------Functions------------
@@ -231,16 +219,80 @@ function returnpoint = cosineInterpolate(spx, spy, epx, epy, step) % start point
     returnpoint = (1 - cos(step*pi))*0.5 * (epy - spy) + spy;
 end
 
-function returnArray = runningAverage(inputArray, order)
-    returnArray = inputArray;
-    for i = 1:size(inputArray)
-        temptotal = 0;
-        for j = (i - order + 1):i
-            if(j < 1)
-                continue;
-            end
-            temptotal = temptotal + inputArray(j);
+
+function estimate = MultiSensorFusionSet(sensorData, time)
+    assert(time <= size(sensorData, 1));    % assert we're not accessing a point beyond the timestep of the simulation TODO verify i used size correctly
+
+    n = size(sensorData, 2);
+
+    meanElementDistances = zeros(n, 1);  % This array will hold the mean distance each element has to the others, later this will be used to create the set psi
+    
+    for i = 1:n
+        for j = 1:n
+            meanElementDistances(i) = meanElementDistances(i) + abs( sensorData(time, j) - sensorData(time, i) );
         end
-        returnArray(i) = temptotal/order;
+        meanElementDistances(i) = meanElementDistances(i)/n;
     end
+
+    
+    setMean = mean(meanElementDistances);
+    %{%}
+    psi = [];
+    
+    for i = 1:n
+        if meanElementDistances(i) <= setMean
+            psi = [psi sensorData(time, i)];
+        end
+    end
+    
+
+   % psi = sensorData(time, :);
+    m = size(psi, 2);
+
+    C = zeros(m);
+    for i = 1:m
+        for j = 1:m
+            C(i, j) = exp( (-1/2) * abs( psi(i) - psi(j) ) );
+        end
+    end
+
+
+    mu = zeros(1, m);
+
+    for i = 1:m
+        for j = 1:m
+            mu(1, i) = mu(1, i) + C(i, j);
+        end
+        mu(1, i) = mu(1, i)/m;
+    end
+
+    tau = zeros (1, m);
+    
+    for i = 1:m
+        sum = 0;
+        for j = 1:m
+            sum = sum + ( mu(1, i) - C(i, j) )^2;
+        end
+        sum = sum/m;
+        tau(1, i) = 1/sum;
+    end
+
+    omega = tau + mu;
+
+    w = zeros(1, m);
+    S = 0;
+    for i = 1:m
+        S = S + omega(1, i);
+    end
+
+    for i = 1:m
+        w(1, i) = omega(1, i)/S;
+    end
+    
+    estimate = 0;
+    for i = 1:m
+        estimate = estimate + w(1, i) * psi(1, i);
+    end
+    
+
 end
