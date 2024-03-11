@@ -1,15 +1,17 @@
 clear
+clear Distance_sensor.m
 % Define parameters
-simDuration = 10;
+simDuration = 3;
 sampleRate = 32;
 samplePeriod = 1/sampleRate;
+t = 0:samplePeriod:simDuration; % Time vector from 0 to simDuration with samplePeriod intervals
 num_samples = sampleRate * simDuration;
-t = linspace(0, simDuration, num_samples); % Time vector t from 0 to simDuration seconds with num_samples points
+% num_samples = length(t);
 max_distance = 2000; % Maximum measurable distance by the sensor (in millimeters)
 min_distance = 100; % Minimum measurable distance by the sensor (in millimeters)
 change_interval = 2; % Interval for changing distance values (in seconds)
 noise_amplitude = 36; % Amplitude of noise (in millimeters)
-num_sensors = 2;
+num_sensors = 5;
 
 
 % Generate simulated distance sensor output with reduced variability
