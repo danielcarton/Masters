@@ -7,10 +7,9 @@ num_samples = sampleRate * simDuration;
 t = linspace(0, simDuration, num_samples); % Time vector t from 0 to simDuration seconds with num_samples points
 max_distance = 2000; % Maximum measurable distance by the sensor (in millimeters)
 min_distance = 100; % Minimum measurable distance by the sensor (in millimeters)
-change_interval = 1; % Interval for changing distance values (in seconds)
+change_interval = 2; % Interval for changing distance values (in seconds)
 noise_amplitude = 36; % Amplitude of noise (in millimeters)
 num_sensors = 3;
-
 
 % Generate simulated distance sensor output with reduced variability
 distance = zeros(1, num_samples);
@@ -34,14 +33,14 @@ for i = 1:num_sensors
     distanceNoisy(i,:) = distance_smoothed + noise_amplitude * randn(size(distance_smoothed));
 end
 
-% Apply Kalman filtering
+% Apply simple voting taking the average of the two closest values
 
 distanceFiltered = zeros(1, num_samples);
 votingArray = zeros(num_sensors, 1);
 
 for i = 1:num_samples
     for j = 1:num_sensors
-        votingArray(j) = kalman(distanceNoisy(j,i));
+        votingArray(j) = distanceNoisy(j,i);
     end
     if median(votingArray) - min(votingArray) < max(votingArray) - median(votingArray)
         x = (min(votingArray) + median(votingArray))/2;
@@ -58,6 +57,7 @@ end
 for i = 1:num_sensors
     errorNoisy = abs(noNoiseDistance-distanceNoisy(i,:));
 end
+
 errorFiltered = abs(noNoiseDistance-distanceFiltered);
 
 
@@ -90,39 +90,6 @@ hold off
 
 
 sum(errorFiltered-errorNoisy)/num_samples
+save('VotingTemp','-append')
 
-save('Distance_sensorTemp','-append')
-function returnPoint = kalman(z)
-    persistent A H Q R 
-    persistent x P
-    persistent firstRun
-    
-    if isempty(firstRun)
-      A = 1;
-      H = 1;
-      
-      Q = 9;
-      R = 45;
-      % Initial guesses
-      x = 200;
-      P = 100;
-      
-      firstRun = 1;  
-    end
-    
-    % Kalman algorithm  
-    % Prediction step
-    xp = A*x;           
-    Pp = A*P*A' + Q;   
-    
-    % Kalman gain
-    K = Pp*H'*inv(H*Pp*H' + R); 
-    
-    % Estimation step
-    x = xp + K*(z - H*xp); 
-    P = Pp - K*H*Pp;     
-    
-    returnPoint = x;
-end
 
-% save('Distance_sensorTemp','-append')

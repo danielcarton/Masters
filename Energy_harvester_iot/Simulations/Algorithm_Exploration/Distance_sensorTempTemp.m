@@ -92,6 +92,7 @@ hold off
 sum(errorFiltered-errorNoisy)/num_samples
 
 save('Distance_sensorTemp','-append')
+save('Distance_sensorTempTemp','-append')
 function returnPoint = kalman(z)
     persistent A H Q R 
     persistent x P
@@ -123,6 +124,8 @@ function returnPoint = kalman(z)
     P = Pp - K*H*Pp;     
     
     returnPoint = x;
+save('Distance_sensorTempTemp','-append')
 end
 
 % save('Distance_sensorTemp','-append')
+
