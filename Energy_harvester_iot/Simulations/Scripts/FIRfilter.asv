@@ -1,10 +1,21 @@
+function estimate = FIRfilter(Sensordata, TimeStep)
 
 
-function estimate = CustomFIR(Sensordata, TimeStep)
+% Ts = 2kHZ, fcutoff = 500H<
+filter = [-0.02010411882885732, -0.05842798004352509, -0.061178403647821976, -0.010939393385338943, 0.05125096443534972, 0.033220867678947885, -0.05655276971833928, -0.08565500737264514, 0.0633795996605449, 0.31085440365663597, 0.4344309124179415, 0.31085440365663597, 0.0633795996605449, -0.08565500737264514, -0.05655276971833928, 0.033220867678947885, 0.05125096443534972, -0.010939393385338943, -0.061178403647821976, -0.05842798004352509, -0.02010411882885732];
 
-filter = [];    % replace with calculated values
 
-for i = 
 
+
+
+n = size(filter, 1)
+
+for i = TimeStep - n: TimeStep
+    if (i <= 0)
+        continue;
+    end
+    index = i + n - TimeStep;
+    estimate = estimate + Sensordata(1, i) * filter(1, index);
+end
 
 end
