@@ -12,7 +12,7 @@ noise_amplitude = 36; % Amplitude of noise (in millimeters)
 num_sensors = 5;
 
 % To generate a new test signal or not, with new number of sensor this should be updated.
-genSig = true;
+genSig = false;
 
 
 % Generate simulated distance sensor output with reduced variability

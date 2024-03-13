@@ -1,6 +1,6 @@
 clear
 % Define standard simulation parameters, should be same across all simulations
-simDuration = 10;
+simDuration = 100;
 sampleRate = 32;
 samplePeriod = 1/sampleRate;
 num_samples = sampleRate * simDuration;
@@ -12,7 +12,7 @@ noise_amplitude = 36; % Amplitude of noise (in millimeters)
 num_sensors = 5;
 
 % To generate a new test signal or not, with new number of sensor this should be updated.
-genSig = true;
+genSig = false;
 
 
 % Generate simulated distance sensor output with reduced variability
@@ -68,8 +68,6 @@ for i = 1:num_samples
     distanceFiltered(i) = x;
 end
 
-% Low-pass filter
-% distanceFiltered = lowpass(distanceFiltered, 0.1);
 
 % Calculate absolute error between the ideal and noisy and filtered signals
 for i = 1:num_sensors

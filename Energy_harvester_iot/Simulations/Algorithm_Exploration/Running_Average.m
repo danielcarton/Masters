@@ -12,7 +12,7 @@ noise_amplitude = 36; % Amplitude of noise (in millimeters)
 num_sensors = 1;
 
 % To generate a new test signal or not, with new number of sensor this should be updated
-genSig = true;
+genSig = false;
 
 
 % Generate simulated distance sensor output with reduced variability
@@ -64,13 +64,13 @@ for i = 1:num_sensors
 end
 errorFiltered = abs(noNoiseDistance-distanceFiltered);
 
-meanErrorNoisy = mean(errorNoisy)
-meanErrorFiltered = mean(errorFiltered)
-
-accuracy = (meanErrorNoisy/meanErrorFiltered)*100 + "%"
-
-maxErrorNoisy = max(errorNoisy);
-maxErrorFiltered = max(errorFiltered);
+% meanErrorNoisy = mean(errorNoisy)
+% meanErrorFiltered = mean(errorFiltered)
+% 
+% accuracy = (meanErrorNoisy/meanErrorFiltered)*100 + "%"
+% 
+% maxErrorNoisy = max(errorNoisy);
+% maxErrorFiltered = max(errorFiltered);
 
 
 % Plot the simulated VL53L0X ToF ranging sensor output
@@ -93,9 +93,9 @@ nexttile;
 plot(t, errorNoisy, 'b', 'LineWidth', 2);
 hold on
 plot(t, errorFiltered, 'r', 'LineWidth', 2);
-yline(meanErrorNoisy, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorNoisy, maxErrorNoisy));
-yline(meanErrorFiltered, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorFiltered, maxErrorFiltered));
-xlabel('Time (seconds)');
+% yline(meanErrorNoisy, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorNoisy, maxErrorNoisy));
+% yline(meanErrorFiltered, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorFiltered, maxErrorFiltered));
+% xlabel('Time (seconds)');
 ylabel('Distance error (millimeters)');
 legend('Noise error', 'Kalman filtered error')
 grid on
