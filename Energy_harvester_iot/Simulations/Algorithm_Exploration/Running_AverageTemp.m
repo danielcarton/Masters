@@ -1,6 +1,6 @@
 clear
-% Define standard simulation parameters, should be same across all simulations
-simDuration = 10;
+% Define parameters
+simDuration = 100;
 sampleRate = 32;
 samplePeriod = 1/sampleRate;
 num_samples = sampleRate * simDuration;
@@ -11,7 +11,8 @@ change_interval = 0.2; % Interval for changing distance values (in seconds)
 noise_amplitude = 36; % Amplitude of noise (in millimeters)
 num_sensors = 5;
 
-% To generate a new test signal or not, with new number of sensor this should be updated.
+% To generate a new test signal or not, with new number of sensor this
+% should be updated.
 genSig = true;
 
 
@@ -19,6 +20,7 @@ genSig = true;
 if genSig == true
     distance = zeros(1, num_samples);
     for i = 1:num_samples
+        % mod(t(i), change_interval)
         if mod(t(i), change_interval) >= change_interval - 0.05 || i == 1
             distance(i) = min_distance + (max_distance - min_distance) * rand; % Generate new distance value
         else
@@ -51,25 +53,12 @@ if genSig == false
 end
 
 
-% Apply simple voting taking the average of the two closest values
 
-distanceFiltered = zeros(1, num_samples);
-votingArray = zeros(num_sensors, 1);
+% Apply running average algorithm
+order = 5;
 
-for i = 1:num_samples
-    for j = 1:num_sensors
-        votingArray(j) = distanceNoisy(j,i);
-    end
-    if median(votingArray) - min(votingArray) < max(votingArray) - median(votingArray)
-        x = (min(votingArray) + median(votingArray))/2;
-    else
-        x = (max(votingArray) + median(votingArray))/2;
-    end
-    distanceFiltered(i) = x;
-end
+distanceFiltered = runningAverage(distanceNoisy, 5);
 
-% Low-pass filter
-% distanceFiltered = lowpass(distanceFiltered, 0.1);
 
 % Calculate absolute error between the ideal and noisy and filtered signals
 for i = 1:num_sensors
@@ -84,7 +73,6 @@ accuracy = (meanErrorNoisy/meanErrorFiltered)*100 + "%"
 
 maxErrorNoisy = max(errorNoisy);
 maxErrorFiltered = max(errorFiltered);
-
 
 
 % Plot the simulated VL53L0X ToF ranging sensor output
@@ -107,12 +95,31 @@ nexttile;
 plot(t, errorNoisy, 'b', 'LineWidth', 2);
 hold on
 plot(t, errorFiltered, 'r', 'LineWidth', 2);
+yline(meanErrorNoisy, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorNoisy, maxErrorNoisy));
+yline(meanErrorFiltered, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorFiltered, maxErrorFiltered));
 xlabel('Time (seconds)');
 ylabel('Distance error (millimeters)');
 legend('Noise error', 'Kalman filtered error')
 grid on
 hold off
 
+save('Running_AverageTemp','-append')
 
 sum(errorFiltered-errorNoisy)/num_samples
+
+function returnArray = runningAverage(inputArray, order)
+    returnArray = inputArray;
+    for i = 1:size(inputArray)
+        temptotal = 0;
+        for j = (i - order + 1):i
+            if(j < 1)
+                continue;
+            end
+            temptotal = temptotal + inputArray(j);
+        end
+        returnArray(i) = temptotal/order;
+save('Running_AverageTemp','-append')
+    end
+save('RunningAverageTemp','-append')
+end
 

@@ -1,5 +1,5 @@
 clear
-% Define parameters
+% Define standard simulation parameters, should be same across all simulations
 simDuration = 100;
 sampleRate = 32;
 samplePeriod = 1/sampleRate;
@@ -11,8 +11,7 @@ change_interval = 0.2; % Interval for changing distance values (in seconds)
 noise_amplitude = 36; % Amplitude of noise (in millimeters)
 num_sensors = 5;
 
-% To generate a new test signal or not, with new number of sensor this
-% should be updated.
+% To generate a new test signal or not, with new number of sensor this should be updated.
 genSig = true;
 
 
@@ -20,7 +19,6 @@ genSig = true;
 if genSig == true
     distance = zeros(1, num_samples);
     for i = 1:num_samples
-        % mod(t(i), change_interval)
         if mod(t(i), change_interval) >= change_interval - 0.05 || i == 1
             distance(i) = min_distance + (max_distance - min_distance) * rand; % Generate new distance value
         else
@@ -83,8 +81,10 @@ errorFiltered = abs(noNoiseDistance-distanceFiltered);
 meanErrorNoisy = mean(errorNoisy)
 meanErrorFiltered = mean(errorFiltered)
 
-maxErrorNoisy = max(errorNoisy);
-maxErrorFiltered = max(errorFiltered);
+% accuracy = (meanErrorNoisy/meanErrorFiltered)*100 + "%"
+
+% maxErrorNoisy = max(errorNoisy);
+% maxErrorFiltered = max(errorFiltered);
 
 
 % Plot the simulated VL53L0X ToF ranging sensor output
@@ -107,8 +107,10 @@ nexttile;
 plot(t, errorNoisy, 'b', 'LineWidth', 2);
 hold on
 plot(t, errorFiltered, 'r', 'LineWidth', 2);
-yline(meanErrorNoisy, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorNoisy, maxErrorNoisy));
-yline(meanErrorFiltered, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorFiltered, maxErrorFiltered));
+% yline(meanErrorNoisy, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorNoisy, maxErrorNoisy));
+% yline(meanErrorFiltered, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorFiltered, maxErrorFiltered));
+yline(meanErrorNoisy, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorNoisy));
+yline(meanErrorFiltered, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorFiltered));
 xlabel('Time (seconds)');
 ylabel('Distance error (millimeters)');
 legend('Noise error', 'Kalman filtered error')

@@ -1,3 +1,4 @@
+clear
 %-----------------Simulation parameters--------------
 sampleRate = 64;     % sensor samples per second
 samplePeriod = 1/sampleRate;
