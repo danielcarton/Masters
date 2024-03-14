@@ -43,10 +43,10 @@ if genSig == true
 end
 
 if genSig == false
-    signal = matfile('signalNoisy.mat');
+    signal = matfile('testSignalNoisy.mat');
     distanceNoisy = signal.distanceNoisy;
 
-    signal = matfile('signalClean.mat');
+    signal = matfile('testSignalClean.mat');
     noNoiseDistance = signal.noNoiseDistance;
 end
 
