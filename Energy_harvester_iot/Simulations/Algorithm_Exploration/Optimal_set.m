@@ -9,9 +9,9 @@ max_distance = 2000; % Maximum measurable distance by the sensor (in millimeters
 min_distance = 100; % Minimum measurable distance by the sensor (in millimeters)
 change_interval = 0.2; % Interval for changing distance values (in seconds)
 noise_amplitude = 36; % Amplitude of noise (in millimeters)
-num_sensors = 5;
+num_sensors = 6;
 
-% To generate a new test signal or not, with new number of sensor this should be updated.
+% To generate a new test signal or not, with new number of sensor this should be updated
 genSig = false;
 
 
@@ -51,23 +51,11 @@ if genSig == false
 end
 
 
-% Apply simple voting taking the average of the two closest values
 
-distanceFiltered = zeros(1, num_samples);
-votingArray = zeros(num_sensors, 1);
-
+% Apply optimal fusion set algorithm
 for i = 1:num_samples
-    for j = 1:num_sensors
-        votingArray(j) = distanceNoisy(j,i);
-    end
-    if median(votingArray) - min(votingArray) < max(votingArray) - median(votingArray)
-        x = (min(votingArray) + median(votingArray))/2;
-    else
-        x = (max(votingArray) + median(votingArray))/2;
-    end
-    distanceFiltered(i) = x;
+    distanceFiltered = MultisensorFusionSet(distanceNoisy, i);
 end
-
 
 % Calculate absolute error between the ideal and noisy and filtered signals
 for i = 1:num_sensors
@@ -84,8 +72,7 @@ maxErrorNoisy = max(errorNoisy);
 maxErrorFiltered = max(errorFiltered);
 
 
-
-% Plot the simulated VL53L0X ToF ranging sensor output
+% Plot the simulated sensor output
 figure(2);
 tiledlayout(2,1);
 nexttile;
@@ -95,9 +82,9 @@ plot(t, distanceNoisy, 'b', 'LineWidth', 2);
 hold on
 plot(t, distanceFiltered, 'r','LineWidth', 2);
 xlabel('Time (seconds)');
-ylabel('Distance (millimeters)');
-title('Simulated VL53L0X ToF Ranging Sensor Output Kalman Filtered');
-legend('Ideal distance measurement', 'Distance with noise', 'Kalman filtered distance')
+ylabel('Sensor output');
+title('Simulated sensor output using optimal set algorithm');
+legend('Ideal sensor output', 'Output with noise', 'Optimal set')
 grid on;
 hold off
 
@@ -105,14 +92,90 @@ nexttile;
 plot(t, errorNoisy, 'b', 'LineWidth', 2);
 hold on
 plot(t, errorFiltered, 'r', 'LineWidth', 2);
-xlabel('Time (seconds)');
-ylabel('Distance error (millimeters)');
-legend('Noise error', 'Kalman filtered error')
+% yline(meanErrorNoisy, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorNoisy, maxErrorNoisy));
+% yline(meanErrorFiltered, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorFiltered, maxErrorFiltered));
+% xlabel('Time (seconds)');
+ylabel('Sensor error');
+legend('Noise error', 'Optimal set error')
 grid on
 hold off
 
 
 sum(errorFiltered-errorNoisy)/num_samples
-save('VotingTemp','-append')
+
+function estimate = MultisensorFusionSet(sensorData, time)
+    assert(time <= size(sensorData, 2));    % assert we're not accessing a point beyond the timestep of the simulation TODO verify i used size correctly
+
+    n = size(sensorData, 1);
+
+    meanElementDistances = zeros(n, 1);  % This array will hold the mean distance each element has to the others, later this will be used to create the set psi
+    
+    for i = 1:n
+        for j = 1:n
+            meanElementDistances(i) = meanElementDistances(i) + abs( sensorData(j, time) - sensorData(i, time) );
+        end
+        meanElementDistances(i) = meanElementDistances(i)/n;
+    end
+
+    
+    setMean = mean(meanElementDistances);
+    %{%}
+    psi = [];
+    
+    for i = 1:n
+        if meanElementDistances(i) <= setMean
+            psi = [psi sensorData(i, time)];
+        end
+    end
+    
+
+   % psi = sensorData(time, :);
+    m = size(psi, 2);
+
+    C = zeros(m);
+    for i = 1:m
+        for j = 1:m
+            C(i, j) = exp( (-1/2) * abs( psi(i) - psi(j) ) );
+        end
+    end
 
 
+    mu = zeros(1, m);
+
+    for i = 1:m
+        for j = 1:m
+            mu(1, i) = mu(1, i) + C(i, j);
+        end
+        mu(1, i) = mu(1, i)/m;
+    end
+
+    tau = zeros (1, m);
+    
+    for i = 1:m
+        sum = 0;
+        for j = 1:m
+            sum = sum + ( mu(1, i) - C(i, j) )^2;
+        end
+        sum = sum/m;
+        tau(1, i) = 1/sum;
+    end
+
+    omega = tau + mu;
+
+    w = zeros(1, m);
+    S = 0;
+    for i = 1:m
+        S = S + omega(1, i);
+    end
+
+    for i = 1:m
+        w(1, i) = omega(1, i)/S;
+    end
+    
+    estimate = 0;
+    for i = 1:m
+        estimate = estimate + w(1, i) * psi(1, i);
+    end
+    
+
+end

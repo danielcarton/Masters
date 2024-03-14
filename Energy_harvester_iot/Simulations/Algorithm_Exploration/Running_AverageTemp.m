@@ -12,7 +12,7 @@ noise_amplitude = 36; % Amplitude of noise (in millimeters)
 num_sensors = 1;
 
 % To generate a new test signal or not, with new number of sensor this should be updated
-genSig = true;
+genSig = false;
 
 
 % Generate simulated distance sensor output with reduced variability
@@ -64,13 +64,13 @@ for i = 1:num_sensors
 end
 errorFiltered = abs(noNoiseDistance-distanceFiltered);
 
-% meanErrorNoisy = mean(errorNoisy)
-% meanErrorFiltered = mean(errorFiltered)
-% 
-% accuracy = (meanErrorNoisy/meanErrorFiltered)*100 + "%"
-% 
-% maxErrorNoisy = max(errorNoisy);
-% maxErrorFiltered = max(errorFiltered);
+meanErrorNoisy = mean(errorNoisy)
+meanErrorFiltered = mean(errorFiltered)
+
+accuracy = (meanErrorNoisy/meanErrorFiltered)*100 + "%"
+
+maxErrorNoisy = max(errorNoisy);
+maxErrorFiltered = max(errorFiltered);
 
 
 % Plot the simulated VL53L0X ToF ranging sensor output

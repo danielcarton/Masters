@@ -1,5 +1,5 @@
 clear
-% Define parameters
+% Define standard simulation parameters, should be same across all simulations
 simDuration = 100;
 sampleRate = 32;
 samplePeriod = 1/sampleRate;
@@ -9,10 +9,9 @@ max_distance = 2000; % Maximum measurable distance by the sensor (in millimeters
 min_distance = 100; % Minimum measurable distance by the sensor (in millimeters)
 change_interval = 0.2; % Interval for changing distance values (in seconds)
 noise_amplitude = 36; % Amplitude of noise (in millimeters)
-num_sensors = 5;
+num_sensors = 6;
 
-% To generate a new test signal or not, with new number of sensor this
-% should be updated.
+% To generate a new test signal or not, with new number of sensor this should be updated
 genSig = false;
 
 
@@ -20,7 +19,6 @@ genSig = false;
 if genSig == true
     distance = zeros(1, num_samples);
     for i = 1:num_samples
-        % mod(t(i), change_interval)
         if mod(t(i), change_interval) >= change_interval - 0.05 || i == 1
             distance(i) = min_distance + (max_distance - min_distance) * rand; % Generate new distance value
         else
@@ -45,34 +43,19 @@ if genSig == true
 end
 
 if genSig == false
-    signal = matfile('signalNoisy.mat');
+    signal = matfile('testSignalNoisy.mat');
     distanceNoisy = signal.distanceNoisy;
 
-    signal = matfile('signalClean.mat');
+    signal = matfile('testSignalClean.mat');
     noNoiseDistance = signal.noNoiseDistance;
 end
 
 
 
-% Apply Kalman filtering
-
-distanceFiltered = zeros(1, num_samples);
-votingArray = zeros(num_sensors, 1);
-
+% Apply optimal fusion set algorithm
 for i = 1:num_samples
-    for j = 1:num_sensors
-        votingArray(j) = kalman(distanceNoisy(j,i));
-    end
-    if median(votingArray) - min(votingArray) < max(votingArray) - median(votingArray)
-        x = (min(votingArray) + median(votingArray))/2;
-    else
-        x = (max(votingArray) + median(votingArray))/2;
-    end
-    distanceFiltered(i) = x;
+    distanceFiltered = MultisensorFusionSet(distanceNoisy, i);
 end
-
-% Low-pass filter
-% distanceFiltered = lowpass(distanceFiltered, 0.1);
 
 % Calculate absolute error between the ideal and noisy and filtered signals
 for i = 1:num_sensors
@@ -80,16 +63,16 @@ for i = 1:num_sensors
 end
 errorFiltered = abs(noNoiseDistance-distanceFiltered);
 
-meanErrorNoisy = mean(errorNoisy);
-meanErrorFiltered = mean(errorFiltered);
+meanErrorNoisy = mean(errorNoisy)
+meanErrorFiltered = mean(errorFiltered)
 
-accuracy = meanErrorFiltered/
+accuracy = (meanErrorNoisy/meanErrorFiltered)*100 + "%"
 
 maxErrorNoisy = max(errorNoisy);
 maxErrorFiltered = max(errorFiltered);
 
 
-% Plot the simulated VL53L0X ToF ranging sensor output
+% Plot the simulated sensor output
 figure(2);
 tiledlayout(2,1);
 nexttile;
@@ -99,8 +82,8 @@ plot(t, distanceNoisy, 'b', 'LineWidth', 2);
 hold on
 plot(t, distanceFiltered, 'r','LineWidth', 2);
 xlabel('Time (seconds)');
-ylabel('Distance (millimeters)');
-title('Simulated VL53L0X ToF Ranging Sensor Output Kalman Filtered');
+ylabel('Sensor output');
+title('Simulated sensor output with ');
 legend('Ideal distance measurement', 'Distance with noise', 'Kalman filtered distance')
 grid on;
 hold off
@@ -109,9 +92,9 @@ nexttile;
 plot(t, errorNoisy, 'b', 'LineWidth', 2);
 hold on
 plot(t, errorFiltered, 'r', 'LineWidth', 2);
-yline(meanErrorNoisy, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorNoisy, maxErrorNoisy));
-yline(meanErrorFiltered, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorFiltered, maxErrorFiltered));
-xlabel('Time (seconds)');
+% yline(meanErrorNoisy, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorNoisy, maxErrorNoisy));
+% yline(meanErrorFiltered, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorFiltered, maxErrorFiltered));
+% xlabel('Time (seconds)');
 ylabel('Distance error (millimeters)');
 legend('Noise error', 'Kalman filtered error')
 grid on
@@ -120,35 +103,79 @@ hold off
 
 sum(errorFiltered-errorNoisy)/num_samples
 
-function returnPoint = kalman(z)
-    persistent A H Q R 
-    persistent x P
-    persistent firstRun
+function estimate = MultisensorFusionSet(sensorData, time)
+    assert(time <= size(sensorData, 2));    % assert we're not accessing a point beyond the timestep of the simulation TODO verify i used size correctly
+
+    n = size(sensorData, 1);
+
+    meanElementDistances = zeros(n, 1);  % This array will hold the mean distance each element has to the others, later this will be used to create the set psi
     
-    if isempty(firstRun)
-      A = 1;
-      H = 1;
-      
-      Q = 9;
-      R = 45;
-      % Initial guesses
-      x = 200;
-      P = 100;
-      
-      firstRun = 1;  
+    for i = 1:n
+        for j = 1:n
+            meanElementDistances(i) = meanElementDistances(i) + abs( sensorData(j, time) - sensorData(i, time) );
+        end
+        meanElementDistances(i) = meanElementDistances(i)/n;
+    end
+
+    
+    setMean = mean(meanElementDistances);
+    %{%}
+    psi = [];
+    
+    for i = 1:n
+        if meanElementDistances(i) <= setMean
+            psi = [psi sensorData(i, time)];
+        end
     end
     
-    % Kalman algorithm  
-    % Prediction step
-    xp = A*x;           
-    Pp = A*P*A' + Q;   
+
+   % psi = sensorData(time, :);
+    m = size(psi, 2);
+
+    C = zeros(m);
+    for i = 1:m
+        for j = 1:m
+            C(i, j) = exp( (-1/2) * abs( psi(i) - psi(j) ) );
+        end
+    end
+
+
+    mu = zeros(1, m);
+
+    for i = 1:m
+        for j = 1:m
+            mu(1, i) = mu(1, i) + C(i, j);
+        end
+        mu(1, i) = mu(1, i)/m;
+    end
+
+    tau = zeros (1, m);
     
-    % Kalman gain
-    K = Pp*H'*inv(H*Pp*H' + R); 
+    for i = 1:m
+        sum = 0;
+        for j = 1:m
+            sum = sum + ( mu(1, i) - C(i, j) )^2;
+        end
+        sum = sum/m;
+        tau(1, i) = 1/sum;
+    end
+
+    omega = tau + mu;
+
+    w = zeros(1, m);
+    S = 0;
+    for i = 1:m
+        S = S + omega(1, i);
+    end
+
+    for i = 1:m
+        w(1, i) = omega(1, i)/S;
+    end
     
-    % Estimation step
-    x = xp + K*(z - H*xp); 
-    P = Pp - K*H*Pp;     
+    estimate = 0;
+    for i = 1:m
+        estimate = estimate + w(1, i) * psi(1, i);
+    end
     
-    returnPoint = x;
+
 end

@@ -43,10 +43,10 @@ if genSig == true
 end
 
 if genSig == false
-    signal = matfile('signalNoisy.mat');
+    signal = matfile('testSignalNoisy.mat');
     distanceNoisy = signal.distanceNoisy;
 
-    signal = matfile('signalClean.mat');
+    signal = matfile('testSignalClean.mat');
     noNoiseDistance = signal.noNoiseDistance;
 end
 
@@ -81,10 +81,10 @@ errorFiltered = abs(noNoiseDistance-distanceFiltered);
 meanErrorNoisy = mean(errorNoisy)
 meanErrorFiltered = mean(errorFiltered)
 
-% accuracy = (meanErrorNoisy/meanErrorFiltered)*100 + "%"
+accuracy = (meanErrorNoisy/meanErrorFiltered)*100 + "%"
 
-% maxErrorNoisy = max(errorNoisy);
-% maxErrorFiltered = max(errorFiltered);
+maxErrorNoisy = max(errorNoisy);
+maxErrorFiltered = max(errorFiltered);
 
 
 % Plot the simulated VL53L0X ToF ranging sensor output
