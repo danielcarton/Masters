@@ -51,10 +51,10 @@ if genSig == false
 end
 
 
-
+distanceFiltered = [];
 % Apply optimal fusion set algorithm
 for i = 1:num_samples
-    distanceFiltered = MultisensorFusionSet(distanceNoisy, i);
+    distanceFiltered = [distanceFiltered MultisensorFusionSet(distanceNoisy, i)];
 end
 
 % Calculate absolute error between the ideal and noisy and filtered signals
