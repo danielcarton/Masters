@@ -102,6 +102,7 @@ hold off
 
 
 sum(errorFiltered-errorNoisy)/num_samples
+save('Optimal_setTemp','-append')
 
 function estimate = MultisensorFusionSet(sensorData, time)
     assert(time <= size(sensorData, 2));    % assert we're not accessing a point beyond the timestep of the simulation TODO verify i used size correctly
@@ -178,4 +179,6 @@ function estimate = MultisensorFusionSet(sensorData, time)
     end
     
 
+save('Optimal_setTemp','-append')
 end
+
