@@ -1,97 +1,10 @@
 <mxfile host="65bd71144e">
-    <diagram id="VdgeeBtt7npplM5VAbBP" name="Initial Sensor System">
-        <mxGraphModel dx="1491" dy="889" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
-            <root>
-                <mxCell id="0"/>
-                <mxCell id="36" value="Background" style="" parent="0"/>
-                <mxCell id="37" value="Sensor system 1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;" parent="36" vertex="1">
-                    <mxGeometry x="430" y="-150" width="450" height="200" as="geometry"/>
-                </mxCell>
-                <mxCell id="38" value="Sensor system 2" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;" parent="36" vertex="1">
-                    <mxGeometry x="430" y="50" width="450" height="200" as="geometry"/>
-                </mxCell>
-                <mxCell id="39" value="Sensor system 3" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;" parent="36" vertex="1">
-                    <mxGeometry x="430" y="250" width="450" height="210" as="geometry"/>
-                </mxCell>
-                <mxCell id="1" value="Foreground" style="locked=1;" parent="0"/>
-                <mxCell id="10" value="I2C GPIO Extender&lt;br&gt;w/ pulldowns" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="240" y="-120" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="11" value="Load Switch" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="580" y="-120" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="12" value="Buck converter" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="720" y="-120" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="13" value="2-stage shunt" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="450" y="80" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="19" value="Load Switch" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="580" y="80" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="20" value="Buck converter" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="720" y="80" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="22" value="Sensor group 1" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="580" y="160" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="23" value="Load Switch" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="580" y="280" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="24" value="Buck converter" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="720" y="280" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="26" value="Multi-property &lt;br&gt;sensor&lt;br&gt;(Likely IMU)" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="720" y="360" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="31" value="nRF SoC" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="40" y="-120" width="120" height="600" as="geometry"/>
-                </mxCell>
-                <mxCell id="33" value="Sensor group 2" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="720" y="160" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="35" value="Can maybe use I2C switch instead of analog switches" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;" parent="1" vertex="1">
-                    <mxGeometry x="-170" y="250" width="130" height="120" as="geometry"/>
-                </mxCell>
-                <mxCell id="40" value="Low-power&lt;br&gt;uC" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="240" y="-40" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="fq9Eu00bdnhMO7FamP1b-40" value="Input power CSA" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="240" y="120" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="41" value="2-stage shunt" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="450" y="-120" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="42" value="2-stage shunt" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="450" y="280" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="43" value="Memory module" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="240" y="40" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="44" value="Sensor" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="720" y="-40" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="46" value="I2C &lt;br&gt;Multiplexer/switch" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="240" y="200" width="120" height="60" as="geometry"/>
-                </mxCell>
-            </root>
-        </mxGraphModel>
-    </diagram>
     <diagram name="Modified Sensor digram" id="Mn4USuMzLWM8rDtGRMMw">
-        <mxGraphModel dx="1491" dy="889" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="1491" dy="1147" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="UHO9wcKawVJonvP0M0y3-0"/>
                 <mxCell id="UHO9wcKawVJonvP0M0y3-1" value="Background" style="locked=1;" parent="UHO9wcKawVJonvP0M0y3-0"/>
-                <mxCell id="UHO9wcKawVJonvP0M0y3-2" value="Sensor system 1" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;" parent="UHO9wcKawVJonvP0M0y3-1" vertex="1">
-                    <mxGeometry x="1230" y="-160" width="450" height="200" as="geometry"/>
-                </mxCell>
-                <mxCell id="UHO9wcKawVJonvP0M0y3-3" value="Sensor system 2" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;" parent="UHO9wcKawVJonvP0M0y3-1" vertex="1">
-                    <mxGeometry x="1230" y="40" width="450" height="200" as="geometry"/>
-                </mxCell>
-                <mxCell id="UHO9wcKawVJonvP0M0y3-4" value="Sensor system 3" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;" parent="UHO9wcKawVJonvP0M0y3-1" vertex="1">
-                    <mxGeometry x="1230" y="240" width="450" height="210" as="geometry"/>
-                </mxCell>
-                <mxCell id="UHO9wcKawVJonvP0M0y3-5" value="Foreground" style="" parent="UHO9wcKawVJonvP0M0y3-0"/>
+                <mxCell id="UHO9wcKawVJonvP0M0y3-5" value="Foreground" style="locked=1;" parent="UHO9wcKawVJonvP0M0y3-0"/>
                 <mxCell id="22ypedtZLx-DCweqtDK7-7" style="edgeStyle=none;shape=connector;rounded=1;html=1;labelBackgroundColor=default;strokeColor=#B09500;strokeWidth=2;fontFamily=Helvetica;fontSize=11;fontColor=default;endArrow=diamond;endFill=1;fillColor=#e3c800;entryX=0;entryY=0.25;entryDx=0;entryDy=0;exitX=1;exitY=0.2;exitDx=0;exitDy=0;exitPerimeter=0;" parent="UHO9wcKawVJonvP0M0y3-5" source="UHO9wcKawVJonvP0M0y3-6" target="UHO9wcKawVJonvP0M0y3-7" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="210" y="-270" as="targetPoint"/>
@@ -251,6 +164,17 @@
                             <mxPoint x="-80" y="-70"/>
                             <mxPoint x="-80" y="-90"/>
                             <mxPoint x="300" y="-90"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="UumwrUkNJMTIXgXp8OLn-0" value="Interrupt/trigger&amp;nbsp;&lt;br&gt;Signal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a0522d;fontColor=#ffffff;strokeColor=#6D1F00;" vertex="1" parent="UHO9wcKawVJonvP0M0y3-5">
+                    <mxGeometry x="-60" y="110" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="UumwrUkNJMTIXgXp8OLn-1" style="edgeStyle=none;shape=connector;rounded=1;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;labelBackgroundColor=default;strokeColor=#006EAF;strokeWidth=2;fontFamily=Helvetica;fontSize=11;fontColor=default;endArrow=dash;endFill=0;fillColor=#1ba1e2;" edge="1" parent="UHO9wcKawVJonvP0M0y3-5" source="UHO9wcKawVJonvP0M0y3-16" target="UumwrUkNJMTIXgXp8OLn-0">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="-110" y="20"/>
+                            <mxPoint x="-110" y="140"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
