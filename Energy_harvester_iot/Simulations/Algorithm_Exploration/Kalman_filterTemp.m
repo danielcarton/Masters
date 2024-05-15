@@ -9,7 +9,7 @@ max_distance = 2000; % Maximum measurable distance by the sensor (in millimeters
 min_distance = 100; % Minimum measurable distance by the sensor (in millimeters)
 change_interval = 0.2; % Interval for changing distance values (in seconds)
 noise_amplitude = 36; % Amplitude of noise (in millimeters)
-num_sensors = 3;
+num_sensors = 1;
 
 % To generate a new test signal or not, with new number of sensor this should be updated.
 genSig = false;
@@ -51,14 +51,15 @@ if genSig == false
 end
 
 
-% Apply simple voting taking the average of the two closest values
+
+% Apply Kalman filtering
 
 distanceFiltered = zeros(1, num_samples);
 votingArray = zeros(num_sensors, 1);
 
 for i = 1:num_samples
     for j = 1:num_sensors
-        votingArray(j) = distanceNoisy(j,i);
+        votingArray(j) = kalman(distanceNoisy(j,i));
     end
     if median(votingArray) - min(votingArray) < max(votingArray) - median(votingArray)
         x = (min(votingArray) + median(votingArray))/2;
@@ -68,6 +69,8 @@ for i = 1:num_samples
     distanceFiltered(i) = x;
 end
 
+% Low-pass filter
+% distanceFiltered = lowpass(distanceFiltered, 0.1);
 
 % Calculate absolute error between the ideal and noisy and filtered signals
 for i = 1:num_sensors
@@ -82,7 +85,6 @@ accuracy = (meanErrorNoisy/meanErrorFiltered)*100 + "%"
 
 maxErrorNoisy = max(errorNoisy);
 maxErrorFiltered = max(errorFiltered);
-
 
 
 % Plot the simulated VL53L0X ToF ranging sensor output
@@ -105,6 +107,10 @@ nexttile;
 plot(t, errorNoisy, 'b', 'LineWidth', 2);
 hold on
 plot(t, errorFiltered, 'r', 'LineWidth', 2);
+% yline(meanErrorNoisy, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorNoisy, maxErrorNoisy));
+% yline(meanErrorFiltered, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorFiltered, maxErrorFiltered));
+yline(meanErrorNoisy, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorNoisy));
+yline(meanErrorFiltered, '-', sprintf('Mean error: %0.2f% of input. Max error: %0.2f% of input', meanErrorFiltered));
 xlabel('Time (seconds)');
 ylabel('Distance error (millimeters)');
 legend('Noise error', 'Kalman filtered error')
@@ -113,4 +119,39 @@ hold off
 
 
 sum(errorFiltered-errorNoisy)/num_samples
+save('Kalman_filterTemp','-append')
+
+function returnPoint = kalman(z)
+    persistent A H Q R 
+    persistent x P
+    persistent firstRun
+    
+    if isempty(firstRun)
+      A = 1;
+      H = 1;
+      
+      Q = 9;
+      R = 45;
+      % Initial guesses
+      x = 200;
+      P = 100;
+      
+      firstRun = 1;  
+    end
+    
+    % Kalman algorithm  
+    % Prediction step
+    xp = A*x;           
+    Pp = A*P*A' + Q;   
+    
+    % Kalman gain
+    K = Pp*H'*inv(H*Pp*H' + R); 
+    
+    % Estimation step
+    x = xp + K*(z - H*xp); 
+    P = Pp - K*H*Pp;     
+    
+    returnPoint = x;
+save('Kalman_filterTemp','-append')
+end
 
