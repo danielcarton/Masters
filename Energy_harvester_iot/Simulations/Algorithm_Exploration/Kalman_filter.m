@@ -140,15 +140,15 @@ function returnPoint = kalman(z)
     
     % Kalman algorithm  
     % Prediction step
-    xp = A*x;           
-    Pp = A*P*A' + Q;   
+    xk = A*x;           
+    Pk = A*P*A' + Q;   
     
     % Kalman gain
-    K = Pp*H'*inv(H*Pp*H' + R); 
+    K = Pk*H'*inv(H*Pk*H' + R); 
     
     % Estimation step
-    x = xp + K*(z - H*xp); 
-    P = Pp - K*H*Pp;     
+    x = xk + K*(z - H*xk); 
+    P = Pk - K*H*Pk;     
     
     returnPoint = x;
 end
