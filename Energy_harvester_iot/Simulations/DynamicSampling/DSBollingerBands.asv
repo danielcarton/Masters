@@ -1,0 +1,75 @@
+clear
+simDuration = 10; % Total duration of sim
+samplesPerSec = 100; % Samples per second of sim
+totalSamples = simDuration * samplesPerSec;
+signalpointsPerSec = 0.5;
+signal = zeros(1, totalSamples);
+
+
+signalDataPoints = rand(signalpointsPerSec*simDuration + 1, 1);
+t = linspace(0, simDuration, totalSamples);
+for bigStep = 1:signalpointsPerSec*simDuration
+    for smallStep = 1:samplesPerSec/signalpointsPerSec
+        spx = (bigStep - 1) * samplesPerSec/signalpointsPerSec;
+        spy = signalDataPoints(bigStep);
+        epx = bigStep * samplesPerSec/signalpointsPerSec;
+        epy = signalDataPoints(bigStep + 1);
+
+        index = spx + smallStep;
+        signal(1, index) = cosineInterpolate(spx, spy, epx, epy, index);
+    end
+end
+clear spx spy epx epy index signalDataPoints bigStep smallStep
+
+
+% algorithm time 
+n = 64;
+tmax = 500;
+psi = 1;
+bbmid = 0;
+k = 0.001;
+b = 2*k;
+
+index = 1;
+while index <= totalSsamples;
+
+    % Calculate moving average at point index
+    A = index-n+1:index;
+    A = A(A > 0);
+    bbmid = mean(signal(A));
+
+    stdv = sqrt(mean((signal(A)-bbmid).^2));
+    dyn = b*stdv;
+    twait = tmax/(1+dyn^psi);
+    output(A) = signal(A);
+    index = index + round(twait);
+end
+
+
+
+% Post-processing
+
+
+output(isnan(output)) = 0;
+
+
+% Plots
+
+tiledlayout(2, 1);
+nexttile
+plot(t, signal);
+nexttile
+plot(t, output);
+
+% End algorithm
+
+function returnpoint = cosineInterpolate(spx, spy, epx, epy, step) % start point xy, end point xy, and step between the two
+    step = (step - spx)/(epx - spx);    % make step a value between 0 and 1 based on its position between start and end
+    returnpoint = (1 - cos(step*pi))*0.5 * (epy - spy) + spy;
+end
+
+
+function returnpoint = linearInterpolate(spx, spy, epx, epy, step)
+     step = (step - spx)/(epx - spx);    % make step a value between 0 and 1 based on its position between start and end    
+     returnpoint = step*(epy-spy) + spy;
+end
