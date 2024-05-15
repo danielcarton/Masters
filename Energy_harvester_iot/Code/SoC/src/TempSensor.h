@@ -1,3 +1,6 @@
+#ifndef _TEMPSENSOR_H_
+#define _TEMPSENSOR_H_
+
 #include "I2C.h"
 #include "macros.h"
 
@@ -12,6 +15,9 @@
 // AVG_64 = 1s
 enum averaging {AVG_1 = 0b00, AVG_8 = 0b01, AVG_32 = 0b10, AVG_64 = 0b11};
 
-void temp_sensor_oneShot(u8 addr, enum averaging averages);
+void temp_sensor_oneShot(uint8_t addr, enum averaging averages);
 
-float temp_sensor_getTemp(u8 addr);
+float temp_sensor_getTemp(uint8_t addr);
+
+
+#endif // !_TEMPSENSOR_H_

@@ -1,5 +1,10 @@
+#ifndef _MACROS_H_
+#define _MACROS_H_
+
 #define u8 unsigned char
 #define u16 unsigned short
 #define u32 unsigned int
 
-// TODO Add SDA and SCL pins to I2C.h
+
+
+#endif // !_MACROS_H_

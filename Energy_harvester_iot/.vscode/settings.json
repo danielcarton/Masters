@@ -1,0 +1,27 @@
+{
+    "nrf-connect.applications": [
+        "${workspaceFolder}\\Code\\SoC",
+        "${workspaceFolder}\\Code\\Test\\tx_rx_blocking",
+        "${workspaceFolder}\\Code\\Test\\blinky"
+    ],
+    "cmake.configureOnOpen": false,
+    "files.associations": {
+        "*.tda": "systemverilog",
+        "nrfx_twim.h": "c",
+        "macros.h": "c",
+        "nrfx_twis.h": "c",
+        "i2c.h": "c",
+        "kernel.h": "c",
+        "inc.h": "c",
+        "nrfx.h": "c",
+        "nrfx_config.h": "c",
+        "nrf_common.h": "c",
+        "gpio_extender.h": "c",
+        "nrfx_config_nrf52840.h": "c",
+        "util_macro.h": "c",
+        "devicetree.h": "c",
+        "nrfx_log.h": "c",
+        "timers.h": "c",
+        "core_cm4.h": "c"
+    }
+}
