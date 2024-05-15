@@ -1,0 +1,6 @@
+{
+    "cmake.configureOnOpen": false,
+    "nrf-connect.applications": [
+        "${workspaceFolder}\\Energy_harvester_iot\\Code\\Test\\tx_rx_blocking"
+    ]
+}
