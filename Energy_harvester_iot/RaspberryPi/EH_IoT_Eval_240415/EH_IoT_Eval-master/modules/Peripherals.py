@@ -31,8 +31,8 @@ class Peri:
         GPIO.setup(pinOut.ADC1_DRDY, GPIO.IN)
 
         # Bank 2 Switch
-        GPIO.setup(pinOut.RPI_GPIO_22, GPIO.OUT)
-        GPIO.output(pinOut.RPI_GPIO_22, GPIO.LOW)
+        #GPIO.setup(pinOut.RPI_GPIO_22, GPIO.OUT)
+        #GPIO.output(pinOut.RPI_GPIO_22, GPIO.LOW)
         print("Bank 2 inactive")
         # GPIO.output(pinOut.RPI_GPIO_22, GPIO.HIGH)
         # print("Bank 2 active")
