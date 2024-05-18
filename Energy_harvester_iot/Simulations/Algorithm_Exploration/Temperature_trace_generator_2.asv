@@ -9,7 +9,7 @@ clear
 
 % Parameters
 duration = 10 * 60; % Duration in seconds (10 minutes)
-sampling_rate = 1; % Sampling rate in Hz (1 sample per second)
+sampling_rate = 10; % Sampling rate in Hz (1 sample per second)
 time_vector = 0:1/sampling_rate:duration; % Time vector
 % temperature_offset = 30;
 
@@ -17,7 +17,7 @@ base_temp = 30; % Base temperature
 peak_temp = 60; % Peak temperature
 plateau_duration = 4 * 60; % Duration of plateau in seconds
 
-% Generate a temperature cycle with a plateau
+% Generate temperature trace with plateau
 rise_duration = (duration - plateau_duration) / 2;
 fall_duration = rise_duration;
 
@@ -36,14 +36,14 @@ temperature_trace(plateau_indices) = peak_temp;
 fall_indices = time_vector > (rise_duration + plateau_duration);
 temperature_trace(fall_indices) = peak_temp - (peak_temp - base_temp) * ((time_vector(fall_indices) - (rise_duration + plateau_duration)) / fall_duration);
 
-% Add small realistic fluctuations
+% Add small fluctuations (can be removed)
 small_fluctuations = 0.5 * cos(2 * pi * time_vector / 60) + 0.2 * sin(2 * pi * time_vector / 120);
 temperature_trace = temperature_trace + small_fluctuations;
 
 % Plot the temperature trace
 figure;
 plot(time_vector, temperature_trace);
-title('Realistic Temperature Trace Over 10 Minutes with Plateau and Drop');
+title('Temperature Trace Over 10 Minutes');
 xlabel('Time (seconds)');
 ylabel('Temperature (°C)');
 grid on;

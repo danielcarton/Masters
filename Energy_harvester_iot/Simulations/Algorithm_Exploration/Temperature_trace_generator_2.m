@@ -9,7 +9,7 @@ clear
 
 % Parameters
 duration = 10 * 60; % Duration in seconds (10 minutes)
-sampling_rate = 1; % Sampling rate in Hz (1 sample per second)
+sampling_rate = 10; % Sampling rate in Hz (1 sample per second)
 time_vector = 0:1/sampling_rate:duration; % Time vector
 % temperature_offset = 30;
 
