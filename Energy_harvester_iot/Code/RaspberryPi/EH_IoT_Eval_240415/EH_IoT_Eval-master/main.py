@@ -3,7 +3,7 @@ from multiprocessing import Process, Event, Value, Array, Manager
 import threading
 
 from modules.Peripherals import Peri, ADC, DAC, LED, System_States
-from modules.Aux import Emulator, Bluetooth
+from modules.Auxilary import Emulator, Bluetooth
 
 import RPi.GPIO as GPIO
 from smbus2 import SMBus, i2c_msg

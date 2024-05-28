@@ -4,7 +4,7 @@ import numpy as np
 import RPi.GPIO as GPIO
 import pigpio
 import modules.pinOut_BCM as pinOut
-import modules.Aux as Aux
+import modules.Auxilary as Aux
 #import messages as msg
 import time
 import timeit
