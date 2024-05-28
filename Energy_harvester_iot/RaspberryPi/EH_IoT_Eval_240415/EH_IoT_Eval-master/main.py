@@ -6,11 +6,13 @@ from modules.Peripherals import Peri, ADC, DAC, LED, System_States
 from modules.Aux import Emulator, Bluetooth
 
 import RPi.GPIO as GPIO
+from smbus2 import SMBus, i2c_msg
 import modules.pinOut_BCM as pinOut
 from modules.file_handler import file
 import parameters as pm
 
 import pandas as pd
+import csv
 import time
 from datetime import datetime
 import socket
@@ -32,10 +34,16 @@ performance_log = Array('i', [0, 0]) # Sampling/Processing, Communication
 Peri()
 dac_instance = DAC()
 
+# GPIO.setup(pinOut.UART_TXD, GPIO.OUT)
+# GPIO.setup(pinOut.UART_RXD, GPIO.IN)
+
+bus = SMBus(1)
 
 def main():
 
     print("Starting main")
+    GPIO.output(pinOut.UART_TXD, GPIO.LOW)
+    time.sleep(1)
 
     # Define if static or dynamic energy storage banks
     Dynamic_Banks.value = 1
@@ -48,6 +56,15 @@ def main():
     #dataset = "Test_500W.tsv"
     dataset = "Test_700W-300W_Mix_Long.tsv"
     #dataset = "Test_200W-700W-changes.tsv"
+
+    # Define temperature trace datasets
+    PLATEAU_TEST_TRACE = 'plateau_trace.csv'
+    SINE_TEST_TRACE = 'sine_trace.csv'
+    SQUARE_TEST_TRACE = 'square_trace.csv'
+    STAIR_TEST_TRACE = 'stair_trace.csv'
+    ARCH_TEST_TRACE = 'arch_trace.csv'
+    TRIANGLE_TEST_TRACE = 'triangle_trace.csv'
+    CONSTANT_TEST_TRACE = 'constant_trace.csv'
 
     if Dynamic_Banks.value:
         print("Dynamic Banks ACTIVATED!")
@@ -63,25 +80,41 @@ def main():
 
     system_states_instance = System_States(sys_states)
     adc_instance = ADC(system_states_instance, end_voltage_reached_event, start_voltage_reached_event, shared_V_th, shared_V_hyst, Dynamic_Banks)
-    emulator_instance = Emulator(dac_instance)
-    led_instance = LED(data_log)
-    bluetooth_instance = Bluetooth()
+    #emulator_instance = Emulator(dac_instance)
+    #led_instance = LED(data_log)
+    #bluetooth_instance = Bluetooth()
 
     # Attaching Data_Ready Callback
     GPIO.add_event_detect(pinOut.ADC1_DRDY, GPIO.FALLING, callback=adc_instance.data_ready_callback)
 
     time.sleep(1)
 
-    #Exp_Runtime1(adc_instance, adc_channels, led_instance, system_states_instance, sys_states, dataset, data_log)
+     
 
-    #Exp_Runtime2(adc_instance, adc_channels, led_instance, system_states_instance, sys_states, dataset, data_log)
+    # Run experiements with different temperature traces
+    # Exp_Temp_Evaluation(adc_instance, adc_channels, sys_states, dataset, data_log, bus, PLATEAU_TEST_TRACE, disable_data_ready = False, KP = 0.4, KD = 0.2, KI = 0.08)
+    # time.sleep(3)
 
-    #Exp_Runtime3(adc_instance, adc_channels, led_instance, system_states_instance, emulator_instance, sys_states, dataset, data_log, performance_log)
+    # Exp_Temp_Evaluation(adc_instance, adc_channels, sys_states, dataset, data_log, bus, SINE_TEST_TRACE, disable_data_ready = False, KP = 0.4, KD = 0.2, KI = 0.08)
+    # time.sleep(3)
 
-    Test_Exp(adc_instance, adc_channels, led_instance, system_states_instance, emulator_instance, bluetooth_instance, sys_states, dataset, data_log, performance_log)
+    Exp_Temp_Evaluation(adc_instance, adc_channels, sys_states, dataset, data_log, bus, SQUARE_TEST_TRACE, disable_data_ready = False, KP = 0.4, KD = 0.2, KI = 0.08)
+    time.sleep(3)
 
-    #Exp_LEDCalib(adc_instance, adc_channels, led_instance, sys_states, dataset, data_log)
+    Exp_Temp_Evaluation(adc_instance, adc_channels, sys_states, dataset, data_log, bus, STAIR_TEST_TRACE, disable_data_ready = False, KP = 0.4, KD = 0.2, KI = 0.08)
+    time.sleep(3)
 
+    Exp_Temp_Evaluation(adc_instance, adc_channels, sys_states, dataset, data_log, bus, ARCH_TEST_TRACE, disable_data_ready = False, KP = 0.4, KD = 0.2, KI = 0.08)
+    time.sleep(3)
+
+    Exp_Temp_Evaluation(adc_instance, adc_channels, sys_states, dataset, data_log, bus, TRIANGLE_TEST_TRACE, disable_data_ready = True, KP = 0.4, KD = 0.2, KI = 0.08)
+    time.sleep(3)
+
+    # Constant temperature test
+    # Exp_Temp_Evaluation(adc_instance, adc_channels, sys_states, dataset, data_log, bus, CONSTANT_TEST_TRACE, disable_data_ready = True, KP = 4, KD = 1.5, KI = 0.4)
+    # time.sleep(3)
+
+    print("All experiments finished!")
 
 
 
@@ -187,327 +220,177 @@ def drain_energy_storage():
     print("Draining Stage 2 finished")
     time.sleep(1)
     start_voltage_reached_event.clear()
-
-
-
-
-# Drain, turn on LED for fixed period, measure time for single DCDC=On period, stop when DCDC off
-def Exp_Runtime1(adc_instance, adc_channels, led_instance, system_states_instance, sys_states, dataset, data_log):
-    filename_time_logger = "DCDC_Runtime_Log.csv"
-
-    # Create an empty DataFrame with one row and column names
-    df = pd.DataFrame(columns=['Brightness', 'V_th', 'V_hyst', 'time'])
-    df.to_csv(pm.outputFilePath + filename_time_logger, index=False, sep="\t")  # Write the column names to the CSV file
-
-    # Eval loop through bank threshold and hysteresis voltages. Discharge, enable LED for xx s and measure on-time of DCDC
-    # for bri in range(400, 1600, 400):
-    for bri in [15]:# range(2, 25, 3):
-        for V_th in range(20, 29, 2):  # 20,27,1
-            shared_V_th.value = V_th / 10
-            for V_hyst in range(1, 10, 1):  # 1, 10, 2
-                shared_V_hyst.value = V_hyst / 10
-
-                print("Bri: " + str(bri))
-                print("V_th: " + str(shared_V_th.value))
-                print("V_hyst: " + str(shared_V_hyst.value))
-
-                # Drain the energy storage
-                drain_energy_storage()
-
-                print("Energy storage is drained.")
-
-                # Parameters for LED time
-                LED_time = 800  # LED on-time in s
-                Sleep_stepsize = 0.01  # time in s
-                Timer_started = 0  # Flag
-                start_time = 0  # Will be set below
-
-                # OPEN NEW FILE
-                filename = f"output_Bri_{bri}_NoScaler_V_th_{shared_V_th.value}_V_hyst_{shared_V_hyst.value}_LED_{LED_time}s.csv"  # Create a unique filename
-                # filename = f"output_Bri_{bri}_Bank2_static.csv"  # Create a unique filename
-                file_instance = file(dataset, filename)
-                file_instance.create_output_file(data_log)  # Create the output file
-                print("Output File Created")
-                adc_instance.filename.value = filename.encode('utf-8')
-
-                # Start Processes
-                processes = []
-                p_Proc_A = Process(target=adc_instance.Data_Processing_A, args=(exit_event, dataset, data_log, adc_channels, sys_states))
-                p_Proc_B = Process(target=adc_instance.Data_Processing_B, args=(exit_event, dataset, data_log, adc_channels, sys_states))
-                processes.append(p_Proc_A)
-                processes.append(p_Proc_B)
-                p_Proc_A.start()
-                p_Proc_B.start()
-
-                print("Turning on LED.")
-
-                # Turn on LED
-                # ! Bypassing the Irradiance Scaler !
-                led_instance.set_brightness(bri/pm.IrradianceScaler)
-
-                # LED on. Waiting for time to elapse
-                for i in range(int(LED_time / Sleep_stepsize)):
-                    time.sleep(Sleep_stepsize)
-                    if sys_states[6] == 1 and Timer_started == 0:
-                        # Record the start time
-                        start_time = time.time()
-                        Timer_started = 1
-                        print("DCDC converter turned on -> Timer started")
-
-                print("Turning off LED. Waiting for DCDC converter to turn off.")
-                # Turn off LED
-                led_instance.set_brightness(0)
-
-                while sys_states[6] == 1:
-                    time.sleep(0.01)
-
-                # Record the end time
-                end_time = time.time()
-                # Calculate the elapsed time
-                elapsed_time = end_time - start_time
-
-                df.loc[0, 'Brightness'] = bri
-                df.loc[0, 'V_th'] = shared_V_th.value
-                df.loc[0, 'V_hyst'] = shared_V_hyst.value
-                df.loc[0, 'time'] = elapsed_time
-
-                df.to_csv(pm.outputFilePath + filename_time_logger, mode='a', header=False, index=False,
-                          sep="\t")  # Append data without writing column names
-
-                print("DCDC Converter off. Going to next iteration.")
-
-                exit_event.set()  # Set the event to signal the child process to exit
-                # completing process
-                for p in processes:
-                    p.join()
-                exit_event.clear()
-
-
-# Drain, turn on LED for fixed period, measure time for total DCDC=On periods, stop when DCDC off
-def Exp_Runtime2(adc_instance, adc_channels, led_instance, system_states_instance, sys_states, dataset, data_log):
-    filename_time_logger = "DCDC_Runtime_Log.csv"
-
-    # Create an empty DataFrame with one row and column names
-    df = pd.DataFrame(columns=['Brightness', 'V_th', 'V_hyst', 'time'])
-    df.to_csv(pm.outputFilePath + filename_time_logger, index=False, sep="\t")  # Write the column names to the CSV file
-
-    # Eval loop through bank threshold and hysteresis voltages. Discharge, enable LED for xx s and measure on-time of DCDC
-    # for bri in range(400, 1600, 400):
-    for bri in [12]:# range(30, 220, 5):
-        for V_th in [28]:# range(20, 29, 2):  # 20,27,1
-            shared_V_th.value = V_th / 10
-            for V_hyst in [5]:# range(1, 10, 1):  # 1, 10, 2
-                shared_V_hyst.value = V_hyst / 10
-
-                print("Bri: " + str(bri))
-                print("V_th: " + str(shared_V_th.value))
-                print("V_hyst: " + str(shared_V_hyst.value))
-
-                # Drain the energy storage
-                drain_energy_storage()
-
-                print("Energy storage is drained.")
-
-                # Parameters for LED time
-                LED_time = 600  # LED on-time in s
-                Sleep_stepsize = 0.01  # time in s
-                #Timer_started = 0  # Flag
-                On_time = 0     # Measured time of DCDC converter == on
-
-                # OPEN NEW FILE
-                filename = f"output_Bri_{bri}_NoScaler_V_th_{shared_V_th.value}_V_hyst_{shared_V_hyst.value}_LED_{LED_time}s.csv"  # Create a unique filename
-                # filename = f"output_Bri_{bri}_Bank2_static.csv"  # Create a unique filename
-                file_instance = file(dataset, filename)
-                file_instance.create_output_file(data_log)  # Create the output file
-                print("Output File Created")
-                adc_instance.filename.value = filename.encode('utf-8')
-
-                # Start Processes
-                processes = []
-                p_Proc_A = Process(target=adc_instance.Data_Processing_A, args=(exit_event, dataset, data_log, adc_channels, sys_states))
-                p_Proc_B = Process(target=adc_instance.Data_Processing_B, args=(exit_event, dataset, data_log, adc_channels, sys_states))
-                processes.append(p_Proc_A)
-                processes.append(p_Proc_B)
-                p_Proc_A.start()
-                p_Proc_B.start()
-
-                print("Turning on LED.")
-                # Turn on LED
-                # ! Bypassing the Irradiance Scaler !
-                led_instance.set_brightness(bri/pm.IrradianceScaler)
-
-                # LED on. Waiting for time to elapse
-                for i in range(int(LED_time / Sleep_stepsize)):
-                    time.sleep(Sleep_stepsize)
-                    if sys_states[6] == 1: 
-                        On_time += Sleep_stepsize
-
-                print("Turning off LED. Waiting for DCDC converter to turn off.")
-                # Turn off LED
-                led_instance.set_brightness(0)
-
-                while sys_states[6] == 1:
-                    On_time += Sleep_stepsize
-                    time.sleep(Sleep_stepsize)
-
-                df.loc[0, 'Brightness'] = bri
-                df.loc[0, 'V_th'] = shared_V_th.value
-                df.loc[0, 'V_hyst'] = shared_V_hyst.value
-                df.loc[0, 'time'] = On_time
-
-                df.to_csv(pm.outputFilePath + filename_time_logger, mode='a', header=False, index=False,
-                          sep="\t")  # Append data without writing column names
-
-                print("DCDC Converter off. Going to next iteration.")
-
-                exit_event.set()  # Set the event to signal the child process to exit
-                # completing process
-                for p in processes:
-                    p.join()
-                exit_event.clear()
-
-
-# Read and "play" irradiance trace, emulate load, measure time for total DCDC=On periods. Requires manual drain!
-def Exp_Runtime3(adc_instance, adc_channels, led_instance, system_states_instance, emulator_instance, sys_states, dataset, data_log, performance_log):
-        
-    print("DRAIN ENERGY STORAGE MANUALLY!")
-    time.sleep(5)
-
-    currentDatetime = datetime.now().strftime("%Y-%m-%d_%H.%M")
-    strCurrentDatetime = str(currentDatetime)
-
-    filename_time_logger = socket.gethostname()+ "_Performance_Log_" + strCurrentDatetime + ".csv"
-
-    # Create an empty DataFrame with one row and column names
-    df = pd.DataFrame(columns=['Timestamp','Sampling count', 'Communication count', 'idle time'])
-    df.to_csv(pm.outputFilePath + filename_time_logger, index=False, sep="\t")  # Write the column names to the CSV file
-
-    shared_V_th.value = 2.8
-    shared_V_hyst.value = 0.6
-
-    Sleep_stepsize = 0.2  # time in s
-    #Timer_started = 0  # Flag
-    On_time = 0     # Measured time of DCDC converter == on
-
-    # OPEN NEW FILE
-    filename = f"Trace_{socket.gethostname()}_Dyn_{Dynamic_Banks.value}_File_{dataset}_{strCurrentDatetime}.csv"  # Create a unique filename
-    # filename = f"output_Bri_{bri}_Bank2_static.csv"  # Create a unique filename
-    file_instance = file(dataset, filename)
-    file_instance.create_output_file(data_log)  # Create the output file
-    print("Output File Created")
-    adc_instance.filename.value = filename.encode('utf-8')
-
-    # Start Processes
-    processes = []
-    p_Proc_A = Process(target=adc_instance.Data_Processing_A, args=(exit_event, dataset, data_log, adc_channels, sys_states))
-    p_Proc_B = Process(target=adc_instance.Data_Processing_B, args=(exit_event, dataset, data_log, adc_channels, sys_states))
-    processes.append(p_Proc_A)
-    processes.append(p_Proc_B)
-    p_Proc_A.start()
-    p_Proc_B.start()
-
-    use_SoC_emulation = 1
-    if use_SoC_emulation == 1:
-        p_SoC_Proc = Process(target=emulator_instance.SoC_Emulator, args=(exit_event, sys_states, performance_log, data_log))
-        processes.append(p_SoC_Proc)
-        p_SoC_Proc.start()
-
-    print("Starting Trace")
-
-    file_instance.read_from_file()
-    file_instance.filter_NaN_values()
-
-    env_dataset_done.clear()
-
-    Env_Emulate = threading.Thread(target = emulator_instance.Env_Emulator, args=(file_instance, led_instance, data_log, env_dataset_done))
     
-    Env_Emulate.start()
+    
+def PID(temp_error, previous_error, sum_error, KP, KI, KD):
+        sum_error += temp_error
+        temp_adj = KP*temp_error + KI*sum_error + KD*previous_error
+        previous_error = temp_error
+        return temp_adj, sum_error
+
+def read_temperature(address, bus):
+    # Result register address
+    result_adr = 0x00
+    
+    # Read result register and convert result into degrees Celsius
+    temp = bus.read_i2c_block_data(address, result_adr, 2)
+    first_bin = bin(temp[0])
+    second_bin = bin(temp[1])
+
+    first_bin_split = first_bin.split('b')
+    second_bin_split = second_bin.split('b')
+
+    first_int = int(first_bin_split[1], 2)
+    second_int = int(second_bin_split[1], 2)
+
+    temperature = first_int << 8 | second_int
+    temperature = temperature*0.0078125
+    return temperature
+
+# Function to map one range to another
+def maprange(a, b, s):
+    (a1, a2), (b1, b2) = a, b
+    return b1 + ((s - a1) * (b2 - b1) / (a2 - a1))
+
+def PID_loop(bus, CURRENT_TEST_TRACE, KP, KD, KI):
+    
+    # Device addresses
+    Sensor_addr_1 = 0x48
+    Sensor_addr_2 = 0x49
+    Sensor_addr_3 = 0x4a
+    Sensor_addr_4 = 0x4b
+
+    # Internal device registers
+    config_adr = 0x01
+    result_adr = 0x00
+
+    # Set configuration register
+    confH = 0x00
+    confL = 0x00
+    data = [confH, confL]
+
+    # Write config to I2C devices
+    bus.write_i2c_block_data(Sensor_addr_1, config_adr, data)
+    bus.write_i2c_block_data(Sensor_addr_2, config_adr, data)
+    bus.write_i2c_block_data(Sensor_addr_3, config_adr, data)
+    bus.write_i2c_block_data(Sensor_addr_4, config_adr, data)
+
+    CTLI_pin = 22
+    GPIO.setwarnings(False)
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(CTLI_pin, GPIO.OUT)
+    pi_pwm = GPIO.PWM(CTLI_pin, 1000)
+    pi_pwm.start(45) # 45 is roughly the midpoint at 1.5V
+
+    min_duty_cycle = 12
+    max_duty_cycle = 79
+
+    previous_error = 0
+    sum_error = 0
+    trace_temp = 40 # Constant trace temperature for testing
+    results_sensor_1 = []
+    results_sensor_2 = []
+    results_sensor_3 = []
+    results_sensor_4 = []
 
 
-    # LED on. Waiting for time to elapse
-    while not env_dataset_done.is_set():
-        time.sleep(Sleep_stepsize)
-        if sys_states[6] == 1: 
-            On_time += Sleep_stepsize
-            # Update and write performance log
-            df.loc[0, 'Timestamp'] = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
-            df.loc[0, 'Sampling count'] = performance_log[0]
-            df.loc[0, 'Communication count'] = performance_log[1]
-            df.loc[0, 'idle time'] = On_time
-            df.to_csv(pm.outputFilePath + filename_time_logger, mode='a', header=False, index=False,
-                sep="\t")  # Append data without writing column names
 
-    print("Dataset finished. Waiting for DCDC converter to turn off")
-    # Turn off LED
-    led_instance.set_brightness(0)
+    
 
-    while sys_states[6] == 1:   # While DC/DC converter on
-        On_time += Sleep_stepsize
-        # Update and write performance log
-        df.loc[0, 'Timestamp'] = datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
-        df.loc[0, 'Sampling count'] = performance_log[0]
-        df.loc[0, 'Communication count'] = performance_log[1]
-        df.loc[0, 'idle time'] = On_time
-        df.to_csv(pm.outputFilePath + filename_time_logger, mode='a', header=False, index=False,
-                sep="\t")  # Append data without writing column names
+    with open(CURRENT_TEST_TRACE, newline = '') as csv_file:
+        reader = csv.reader(csv_file, delimiter = ',')
+        temperature_trace = list(reader)
+    run_iteration = 0
+    seconds_per_sample = 0.1
+    while(run_iteration < 6001):
+        # Store start time
+        start_time = time.time()
         
-        time.sleep(Sleep_stepsize)
+        # Read reference sensor temperatures
+        temp1 = read_temperature(Sensor_addr_1, bus)
+        temp2 = read_temperature(Sensor_addr_2, bus)
+        temp3 = read_temperature(Sensor_addr_3, bus)
+        temp4 = read_temperature(Sensor_addr_4, bus)
+        
+        # Average all 4 sensors used to control the TEC element
+        temp_avg = (temp1 + temp2 + temp3 + temp4)/4
+            
+        print("{a:40.6f} {b:16.6f} {c:16.6f} {d:16.6f}". format(a = temp1, b = temp2, c = temp3, d = temp4))
+
+        print(CURRENT_TEST_TRACE, ": ", run_iteration)
+
+        # Calculate the error between trace and average
+        temp_error = float(temperature_trace[0][run_iteration]) - temp_avg
+        
+        results_sensor_1.insert(run_iteration, temp1)
+        results_sensor_2.insert(run_iteration, temp2)
+        results_sensor_3.insert(run_iteration, temp3)
+        results_sensor_4.insert(run_iteration, temp4)
+            
+        # Use PID controller to determine temperature adjustment
+        temp_adjustment, sum_error = PID(temp_error, previous_error, sum_error, KP, KI, KD)
+        previous_error = temp_error
+        # Map and convert the temperature adjusment to duty cycle
+        pwm_adjustment = maprange((8, -8), (min_duty_cycle, max_duty_cycle), temp_adjustment)
+
+        if pwm_adjustment > max_duty_cycle:
+            pwm_adjustment = max_duty_cycle
+        elif pwm_adjustment < min_duty_cycle:
+            pwm_adjustment = min_duty_cycle
+
+        # Output new duty cycle
+        pi_pwm.ChangeDutyCycle(int(pwm_adjustment))
+        
+        # Update run iteration and wait the remaining time until 0.1 seconds
+        run_iteration = run_iteration + 1
+        time.sleep(seconds_per_sample - (time.time()-start_time))
+
+    pi_pwm.ChangeDutyCycle(45)
+
+    rows = zip(results_sensor_1, results_sensor_2, results_sensor_3, results_sensor_4, temperature_trace[0])
+    with open(f"{CURRENT_TEST_TRACE[:len(CURRENT_TEST_TRACE)-4]}_reference_results.csv", "w") as f:
+        writer = csv.writer(f)
+        for row in rows:
+            writer.writerow(row)
 
 
+def Exp_Temp_Evaluation(adc_instance, adc_channels, sys_states, dataset, data_log, bus, CURRENT_TEST_TRACE, disable_data_ready, KP, KD, KI):
 
-    print("DCDC Converter off. Going to next iteration.")
+    print("Starting test: ", CURRENT_TEST_TRACE)
+    
 
-    exit_event.set()  # Set the event to signal the child process to exit
-    # completing process
-    for p in processes:
-        p.join()
-    exit_event.clear()
-    Env_Emulate.join()
-
-    # Disabling Data_Ready Callback
-    GPIO.remove_event_detect(pinOut.ADC1_DRDY)
-    time.sleep(1)
-    print("Finishing Experiment 3")
-
-
-
-# Test for Bluetooth
-def Test_Exp(adc_instance, adc_channels, led_instance, system_states_instance, emulator_instance, bluetooth_instance, sys_states, dataset, data_log, performance_log):
-    print("STARTING TEST EXPERIMENT")
-
-    shared_V_th.value = 2.8
-    shared_V_hyst.value = 0.6
-
-    # OPEN NEW FILE
-    filename = "Test_only.csv"  # Create a unique filename
-    # filename = f"output_Bri_{bri}_Bank2_static.csv"  # Create a unique filename
+     # OPEN NEW FILE
+    filename = f"{CURRENT_TEST_TRACE[:len(CURRENT_TEST_TRACE)-4]}_ADC_results.csv"  # Create a unique filename
     file_instance = file(dataset, filename)
     file_instance.create_output_file(data_log)  # Create the output file
     print("Output File Created")
     adc_instance.filename.value = filename.encode('utf-8')
 
+    print("Telling SoC a test has been started")   
+    GPIO.output(pinOut.UART_TXD, GPIO.HIGH)
+        
+            
     # Start Processes
     processes = []
     p_Proc_A = Process(target=adc_instance.Data_Processing_A, args=(exit_event, dataset, data_log, adc_channels, sys_states))
     p_Proc_B = Process(target=adc_instance.Data_Processing_B, args=(exit_event, dataset, data_log, adc_channels, sys_states))
+
     processes.append(p_Proc_A)
     processes.append(p_Proc_B)
+
     p_Proc_A.start()
     p_Proc_B.start()
 
-    BT_proc = Process(target=bluetooth_instance.BT_Handler)
-    processes.append(BT_proc)
-    BT_proc.start()
 
-    env_dataset_done.clear()
-
-    # Turn off LED
-    led_instance.set_brightness(0)
-
-    time.sleep(60)
+    PID_loop(bus, CURRENT_TEST_TRACE, KP, KD, KI)
 
 
-    print("DCDC Converter off. Going to next iteration.")
+
+    print("Finishing Experiment, telling SoC test is finished")
+
+    GPIO.output(pinOut.UART_TXD, GPIO.LOW)
+
+    time.sleep(2)
 
     exit_event.set()  # Set the event to signal the child process to exit
     # completing process
@@ -516,81 +399,51 @@ def Test_Exp(adc_instance, adc_channels, led_instance, system_states_instance, e
     exit_event.clear()
 
     # Disabling Data_Ready Callback
-    GPIO.remove_event_detect(pinOut.ADC1_DRDY)
+    if disable_data_ready == True:
+        GPIO.remove_event_detect(pinOut.ADC1_DRDY)
     time.sleep(1)
-    print("Finishing Test Experiment")
 
 
 
-
-# Sweep LED from 0 to 100 % and record the ADC data, !Disconnect J26!
-def Exp_LEDCalib(adc_instance, adc_channels, led_instance, sys_states, dataset, data_log):
-
-    shared_V_th.value = 2.8
-    shared_V_hyst.value = 0.6
-
-    # OPEN NEW FILE
-    filename = f"{socket.gethostname()}_LED_Linearity_Log.csv"  # Create a unique filename
-    file_instance = file(dataset, filename)
-    file_instance.create_output_file(data_log)  # Create the output file
-    print("Output File Created")
-    adc_instance.filename.value = filename.encode('utf-8')
-
-    # Start Processes
-    processes = []
-    p_Proc_A = Process(target=adc_instance.Data_Processing_A, args=(exit_event, dataset, data_log, adc_channels, sys_states))
-    p_Proc_B = Process(target=adc_instance.Data_Processing_B, args=(exit_event, dataset, data_log, adc_channels, sys_states))
-    processes.append(p_Proc_A)
-    processes.append(p_Proc_B)
-    p_Proc_A.start()
-    p_Proc_B.start()
+    # Waiting for SoC to signal that data is available in storage
+    while(GPIO.input(pinOut.UART_RXD) == 0):
+        print("Nothing received from SoC...")
+        time.sleep(0.5)
 
 
-    use_duty_cycle = 0
+    print("Now retrieving from storage")
+    deviceaddress = 0x50
+    writeaddress = 0x00
+    addresses= [0, 0, 0]
+    # break_flag = 0
+    # consecutivezeros = 0
+    
+    with open(f"/home/pi/Desktop/{CURRENT_TEST_TRACE[:len(CURRENT_TEST_TRACE)-4]}_output.bin", "wb") as myfile:
+        for i in range(4096):
+            # if break_flag == 1:
+            #     break
+            addresses[0] = deviceaddress | (writeaddress >> 16) & 0x07
+            addresses[1] = (writeaddress >> 8) & 0xff
+            addresses[2] = writeaddress & 0xff
 
-    # Use set_dutycycle without calibration factor for direct control
-    if use_duty_cycle:
-        led_instance.set_dutycycle(1)
-        time.sleep(3)
-        led_instance.set_dutycycle(0)
-        time.sleep(10)
-        
-        for i in range(0,500, 1):
-            led_instance.set_dutycycle(i/500)
-            time.sleep(0.2)
-        
-        time.sleep(10)
+            msg = i2c_msg.write(addresses[0], [addresses[1], addresses  [2]])
+            bus.i2c_rdwr(msg)
+            msg = i2c_msg.read(addresses[0], 128)
+            bus.i2c_rdwr(msg)
+            #print(msg.buf)
+            writeaddress = writeaddress + 128
 
-        # Turn off LED
-        led_instance.set_dutycycle(0)
+            # 2: i2c_msg is iterable
+            for value in msg:
+                # if value == 0:
+                #     consecutivezeros += 1
+                # else:
+                #     consecutivezeros = 0
+                # if consecutivezeros == 30:
+                #     break_flag = 1
+                #     break
+                myfile.write(value.to_bytes(1, 'big'))
 
-    else:   # Use set_brightness with calibration factor (Check Irradiance_Scaler!)
-        max_bri_W = 17
-        led_instance.set_brightness(max_bri_W)
-        time.sleep(3)
-        led_instance.set_brightness(0)
-        time.sleep(10)
-        
-        for i in range(0,1000, 1):
-            led_instance.set_brightness(i/1000 * max_bri_W)
-            time.sleep(0.25)
-        led_instance.set_brightness(max_bri_W)
-        time.sleep(10)
-
-        # Turn off LED
-        led_instance.set_brightness(0)
-
-
-    exit_event.set()  # Set the event to signal the child process to exit
-    # completing process
-    for p in processes:
-        p.join()
-    exit_event.clear()
-
-    # Disabling Data_Ready Callback
-    GPIO.remove_event_detect(pinOut.ADC1_DRDY)
-    time.sleep(1)
-    print("Finishing Experiment 4")
 
 
 

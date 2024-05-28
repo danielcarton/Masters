@@ -30,6 +30,9 @@ class Peri:
         GPIO.setup(pinOut.ADC12_RESET, GPIO.OUT)
         GPIO.setup(pinOut.ADC1_DRDY, GPIO.IN)
 
+        GPIO.setup(pinOut.UART_TXD, GPIO.OUT)
+        GPIO.setup(pinOut.UART_RXD, GPIO.IN)
+
         # Bank 2 Switch
         #GPIO.setup(pinOut.RPI_GPIO_22, GPIO.OUT)
         #GPIO.output(pinOut.RPI_GPIO_22, GPIO.LOW)
@@ -38,29 +41,29 @@ class Peri:
         # print("Bank 2 active")
 
         # Bank 3 Switch
-        GPIO.setup(pinOut.I2C_SCI, GPIO.OUT)
-        GPIO.output(pinOut.I2C_SCI, GPIO.LOW)
+        #GPIO.setup(pinOut.I2C_SCI, GPIO.OUT)
+        #GPIO.output(pinOut.I2C_SCI, GPIO.LOW)
         print("Bank 3 inactive")
         # GPIO.output(pinOut.I2C_SCI, GPIO.HIGH)
         # print("Bank 3 active")
 
         # MPPT / Bypass Switch
-        GPIO.setup(pinOut.UART_TXD, GPIO.OUT)
-        GPIO.output(pinOut.UART_TXD, GPIO.LOW)
+        #GPIO.setup(pinOut.UART_TXD, GPIO.OUT)
+        #GPIO.output(pinOut.UART_TXD, GPIO.LOW)
         # GPIO.setup(pinOut.SPI_1_CS_ADC1, GPIO.OUT)
         # GPIO.setup(pinOut.SPI_1_CS_ADC2, GPIO.OUT)
 
         # Emulated DCDC EN Signal
-        GPIO.setup(pinOut.UART_RXD, GPIO.OUT)
-        GPIO.output(pinOut.UART_RXD, GPIO.LOW)
+        #GPIO.setup(pinOut.UART_RXD, GPIO.OUT)
+        #GPIO.output(pinOut.UART_RXD, GPIO.LOW)
 
         # Board LED for Debugging
         GPIO.setup(pinOut.BOARD_LED, GPIO.OUT)
         GPIO.output(pinOut.BOARD_LED, GPIO.LOW)
 
         # Temp Debug!! (EH Connect Test)
-        GPIO.setup(pinOut.I2C_SDA, GPIO.OUT)
-        GPIO.output(pinOut.I2C_SDA, GPIO.HIGH)
+        #GPIO.setup(pinOut.I2C_SDA, GPIO.OUT)
+        #GPIO.output(pinOut.I2C_SDA, GPIO.HIGH)
 
 
 class ADC:
@@ -348,11 +351,11 @@ class System_States:
             print("Bank 1 can not be switched")
         #elif number == 2 and self.Bank_activated_state[number] == 0:
         elif number == 2 and self.sys_states[number-1] == 0:
-            GPIO.output(pinOut.RPI_GPIO_22, GPIO.HIGH)
+            #GPIO.output(pinOut.RPI_GPIO_22, GPIO.HIGH)
             self.sys_states[number-1] = 1
             print("Bank 2 activated")
         elif number == 3 and self.sys_states[number-1] == 0:
-            GPIO.output(pinOut.I2C_SCI, GPIO.HIGH)
+            #GPIO.output(pinOut.I2C_SCI, GPIO.HIGH)
             self.sys_states[number-1] = 1
             print("Bank 3 activated")
 
@@ -363,37 +366,37 @@ class System_States:
         if number == 1:     # Bank 1 is always enabled
             print("Bank 1 can not be switched")
         elif number == 2 and self.sys_states[number-1] == 1:
-            GPIO.output(pinOut.RPI_GPIO_22, GPIO.LOW)
+            #GPIO.output(pinOut.RPI_GPIO_22, GPIO.LOW)
             self.sys_states[number-1] = 0
             print("Bank 2 deactivated")
         elif number == 3 and self.sys_states[number-1] == 1:
-            GPIO.output(pinOut.I2C_SCI, GPIO.LOW)
+            #GPIO.output(pinOut.I2C_SCI, GPIO.LOW)
             self.sys_states[number-1] = 0
             print("Bank 3 deactivated")
 
     def MPPT_activate(self):
         if self.sys_states[5] == 0:
-            GPIO.output(pinOut.UART_TXD, GPIO.HIGH)
+            #GPIO.output(pinOut.UART_TXD, GPIO.HIGH)
             self.sys_states[5] = 1
             GPIO.output(pinOut.BOARD_LED, GPIO.HIGH)
             print("MPPT activated")
 
     def MPPT_deactivate(self):
         if self.sys_states[5] == 1:
-            GPIO.output(pinOut.UART_TXD, GPIO.LOW)
+            #GPIO.output(pinOut.UART_TXD, GPIO.LOW)
             self.sys_states[5] = 0
             GPIO.output(pinOut.BOARD_LED, GPIO.LOW)
             print("MPPT deactivated")
 
     def DCDC_activate(self):
         if self.sys_states[6] == 0:
-            GPIO.output(pinOut.UART_RXD, GPIO.HIGH)
+            #GPIO.output(pinOut.UART_RXD, GPIO.HIGH)
             self.sys_states[6] = 1
             print("DCDC activated")
 
     def DCDC_deactivate(self):
         if self.sys_states[6] == 1:
-            GPIO.output(pinOut.UART_RXD, GPIO.LOW)
+            #GPIO.output(pinOut.UART_RXD, GPIO.LOW)
             self.sys_states[6] = 0
             print("DCDC deactivated")
 
