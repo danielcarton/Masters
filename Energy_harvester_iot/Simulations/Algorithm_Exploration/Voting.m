@@ -9,7 +9,7 @@ max_distance = 2000; % Maximum measurable distance by the sensor (in millimeters
 min_distance = 100; % Minimum measurable distance by the sensor (in millimeters)
 change_interval = 0.2; % Interval for changing distance values (in seconds)
 noise_amplitude = 36; % Amplitude of noise (in millimeters)
-num_sensors = 3;
+num_sensors = 4;
 
 % To generate a new test signal or not, with new number of sensor this should be updated.
 genSig = false;
