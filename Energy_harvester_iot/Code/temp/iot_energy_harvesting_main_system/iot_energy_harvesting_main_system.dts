@@ -13,6 +13,18 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 	};
+
+	leds {
+		compatible = "nordic,gpio-pins";
+		led1: led_1{
+            gpios = <&gpio0  9 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+		led2: led_2{
+            gpios = <&gpio0  10 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
+	};
 };
 
 &flash0 {
@@ -67,4 +79,9 @@ clock@40000000
 &clock {
 	reg = <0x40000000 0x1000>;
 	status = "okay";
+};
+
+aliases {
+	led_1 = &led1;
+	led_2 = &led2;
 };

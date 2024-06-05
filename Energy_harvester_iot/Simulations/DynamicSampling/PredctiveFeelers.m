@@ -1,6 +1,8 @@
 clear
+format long
+clc
 simDuration = 10; % Total duration of sim
-samplesPerSec = 50; % Samples per second of sim
+samplesPerSec = 100; % Samples per second of sim
 totalSamples = simDuration * samplesPerSec;
 signalpointsPerSec = 0.5;
 signal = zeros(1, totalSamples);
@@ -25,7 +27,7 @@ clear spx spy epx epy index signalDataPoints bigStep smallStep signalpointsPerSe
 % algorithm time\
 
 output = nan(4, totalSamples);
-threshold = 0.5;
+threshold = 0.75;
 activeSamples = zeros(1, 2);
 index = 1;
 m = 0; 
@@ -86,7 +88,6 @@ for lower = 1:totalSamples
         % If it reaches this spot, the upper and lower boundaries are found
         % and are not adjacent
         for step = lower:upper
-            output(2, step) = cosineInterpolate(lower, output(1, lower), upper, output(1, upper), step);
             output(3, step) = linearInterpolate(lower, output(1, lower), upper, output(1, upper), step);
         end
         lower = upper;
@@ -116,30 +117,38 @@ tiledlayout(3, 1);
 nexttile
 plot(t, signal);
 hold on
+grid on
 area(t, output(1, :));
 plot(t, boundaries(1, :));
 plot(t, boundaries(2, :));
-plot(t, boundaries(3, :));
-legend('signal', 'sample', 'upper', 'lower', 'centre');
+% plot(t, boundaries(3, :));
+legend('signal', 'samples', 'upper threshold', 'lower thresholds');
+ylabel("Temperature (C)");
+xlabel("Time (seconds)");
 
 hold off
 title("Signal & Sampling")
 nexttile
 plot(t, output(3,:));
+grid on
 hold on
-plot(t, output(2,:));
 plot(t, output(4,:));
 title("interpolation")
-legend('Linear Interpolation', 'Cosine Interpolation', 'Spline Interpolation)')
+legend('Linear Interpolation', 'Spline Interpolation)')
+ylabel("Temperature (C)");
+xlabel("Time (seconds)");
+
 hold off
 nexttile
-plot(t, abs(signal-output(2, :)))
 hold on
 plot(t, abs(signal-output(3, :)))
+grid on
 plot(t, abs(signal-output(4, :)))
 hold off
-legend("Cosine interpolate Error", "Linear interpolation Error", 'Spline Interpolation Error');
+legend("Linear interpolation Error", 'Spline Interpolation Error');
 title("Interpolate error")  
+ylabel("Temperature (C)");
+xlabel("Time (seconds)");
 
 
 fprintf("Samples: %d, ignored samples: %d, efficiency: %.02f%%, mean cosine error = %.02fmC, mean linear error = %.02fmC, mean spline error = %.02fmC\n", totalSamples, nnz(~output(1, :)), nnz(~output(1, :))/totalSamples*100, mean(abs(signal-output(2, :)))*1000, mean(abs(signal-output(3, :)))*1000, mean(abs(signal-output(4, :)))*1000)

@@ -1,6 +1,8 @@
 clear
-simDuration = 10; % Total duration of sim
-samplesPerSec = 1000; % Samples per second of sim
+format long
+clc
+simDuration = 20; % Total duration of sim
+samplesPerSec = 100; % Samples per second of sim
 totalSamples = simDuration * samplesPerSec;
 signalpointsPerSec = 1;
 signal = zeros(1, totalSamples);
@@ -25,12 +27,13 @@ clear spx spy epx epy index signalDataPoints bigStep smallStep signalpointsPerSe
 
 % algorithm time 
 n = 16;
-tmax = 500;
-k =500;
+tmax = 100;
+tmin = 10;
+k = 50;
 psi = 2;
 
 index = 1;
-flops(0);
+
 while index <= totalSamples
 
     % Calculate moving average at point index
@@ -44,11 +47,10 @@ while index <= totalSamples
 
     dyn = k*mean(abs(lin(1:size(A)) - signal(A)));
 
-    twait = tmax/(1+dyn^psi);
+    twait = tmin + (tmax-tmin)/(1+dyn^psi);
     output(1, A) = signal(A);
     index = index + round(twait)+1;
 end
-flops
 clear A bbmid stdv dyn twait index b k psi tmax n
 output([2 3],:) = [output(1, :); output(1, :)];
 
@@ -68,7 +70,6 @@ for lower = 1:totalSamples
         % If it reaches this spot, the upper and lower boundaries are found
         % and are not adjacent
         for step = lower:upper
-            output(2, step) = cosineInterpolate(lower, output(1, lower), upper, output(1, upper), step);
             output(3, step) = linearInterpolate(lower, output(1, lower), upper, output(1, upper), step);
         end
         lower = upper;
@@ -99,26 +100,31 @@ nexttile
 plot(t, signal);
 hold on
 area(t, output(1, :));
-legend('signal', 'sample', 'upper', 'lower', 'centre');
-
+legend('signal', 'sample', 'upper', 'lower');
+ylabel("Temperature (C)");
+xlabel("Time (seconds)");
 hold off
 title("Signal & Sampling")
+
 nexttile
 plot(t, output(3,:));
 hold on
-plot(t, output(2,:));
 plot(t, output(4,:));
 title("interpolation")
-legend('Linear Interpolation', 'Cosine Interpolation', 'Spline Interpolation)')
+legend('Linear Interpolation',  'Spline Interpolation)')
 hold off
+ylabel("Temperature (C)");
+xlabel("Time (seconds)");
+
 nexttile
-plot(t, abs(signal-output(2, :)))
 hold on
 plot(t, abs(signal-output(3, :)))
 plot(t, abs(signal-output(4, :)))
 hold off
-legend("Cosine interpolate Error", "Linear interpolation Error", 'Spline Interpolation Error');
+legend("Linear interpolation Error", 'Spline Interpolation Error');
 title("Interpolate error")  
+ylabel("Temperature (C)");
+xlabel("Time (seconds)");
 
 
 fprintf("Total samples: %d, ignored samples: %d, efficiency: %.02f%%, mean cosine error = %.02fmC, mean linear error = %.02fmC, mean spline error = %.02fmC\n", totalSamples, nnz(~output(1, :)), nnz(~output(1, :))/totalSamples*100, mean(abs(signal-output(2, :)))*1000, mean(abs(signal-output(3, :)))*1000, mean(abs(signal-output(4, :)))*1000)

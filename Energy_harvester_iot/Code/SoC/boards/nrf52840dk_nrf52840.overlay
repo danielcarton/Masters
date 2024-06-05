@@ -1,0 +1,136 @@
+// To get started, press Ctrl+Space to bring up the completion menu and view the available nodes.
+
+// You can also use the buttons in the sidebar to perform actions on nodes.
+// Actions currently available include:
+
+// * Enabling / disabling the node
+// * Adding the bus to a bus
+// * Removing the node
+// * Connecting ADC channels
+
+// For more help, browse the DeviceTree documentation at https://docs.zephyrproject.org/latest/guides/dts/index.html
+// You can also visit the nRF DeviceTree extension documentation at https://nrfconnect.github.io/vscode-nrf-connect/devicetree/nrfdevicetree.html
+
+&i2c0 {    
+    pinextender: pinextender@70{
+        compatible = "i2c-device";
+        status = "okay";
+        reg = < 0x70 >;
+        pinextenderReset: pinextenderReset{
+            compatible = "nordic,gpio-pins";
+            gpios = <&gpio0  17 GPIO_ACTIVE_LOW>;
+            status = "okay"; 
+        };
+        pinextender_int_pin: pinextender-int-pin{
+            compatible = "nordic,gpio-pins";
+            gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+            status = "okay";
+        };
+    };
+    
+    busswitch: busswitch@77{
+        compatible = "i2c-device";
+        status = "okay";
+        reg = < 0x77 >;
+        busswitchreset: busswitchreset{
+            compatible = "nordic,gpio-pins";
+            gpios = <&gpio0  16 GPIO_ACTIVE_LOW>;
+            status = "okay"; 
+        };
+    };
+    
+    temp1: temp1@4a{
+        compatible = "i2c-device";
+        reg = < 0x4a >;
+        status = "okay";
+    };
+    
+    temp2: temp2@48{
+        compatible = "i2c-device";
+        reg = < 0x48 >;
+        status = "okay";
+    };
+    
+    temp3: temp3@4b{
+        compatible = "i2c-device";
+        reg = < 0x4b >;
+        status = "okay";
+    };
+    
+    temp4: temp4@49{
+        compatible = "i2c-device";
+        reg = < 0x49 >;
+        status = "okay";
+    };
+    
+    temp5: temp5@48{
+        compatible = "i2c-device";
+        reg = < 0x48 >;
+        status = "okay";
+    };
+    
+    temp6: temp6@4b{
+        compatible = "i2c-device";
+        reg = < 0x4b >;
+        status = "okay";
+    };
+    
+    ext_memory: ext_memory@50{
+        compatible = "i2c-device";
+        reg = < 0x50 >;
+        status = "okay";
+    };
+
+    status = "okay";
+    clock-frequency = <I2C_BITRATE_FAST>;
+    easydma-maxcnt-bits = <128>;
+};
+
+&gpio0 {
+    led1{
+        compatible = "nordic,gpio-pins";
+        gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+        status = "okay";
+    };
+    led2{
+        compatible = "nordic,gpio-pins";
+        gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+        status = "okay";
+    };
+};
+
+
+&i2c1 {
+    status = "disabled";
+    clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi3 {
+    status = "disabled";
+};
+
+&spi1 {
+    status = "disabled";
+};
+
+&qspi {
+    status = "disabled";
+};
+
+&pwm0 {
+    status = "disabled";
+};
+
+&adc {
+    status = "disabled";
+};
+
+&i2c0_default {
+    group1 {
+        psels = <NRF_PSEL(TWIM_SDA, 0, 20)>, <NRF_PSEL(TWIM_SCL, 0, 19)>;
+    };
+};
+
+&timer0 {
+    status = "disabled";
+};

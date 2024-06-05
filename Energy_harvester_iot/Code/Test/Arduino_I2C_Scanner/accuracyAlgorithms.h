@@ -1,5 +1,9 @@
 #ifndef _ACCURACY_ALGORITHMS_H_
 #define _ACCURACY_ALGORITHMS_H_
+
+#include "I2C.h"
+#include "macros.h"
+
 #include <math.h>
 
 #define MAX_SENSORS 6
@@ -10,11 +14,5 @@
 // 4 sensors 3 samples per:     | A | B | C | D | x | x | = S[4][3]
 //                              |A+1|B+1|C+1|D+1| x | x |
 //                              |A+2|B+2|C+2|D+2| x | x |
-
-float optimalSet(float *data, uint8_t noSensors);
-float average(float *data, uint8_t noSensors);
-float simpleVoting(float *data, uint8_t noSensors);
-float kalman(float *data, uint8_t noSenors);
-
 
 #endif // !_ACCURACY_ALGORITHMS_H
